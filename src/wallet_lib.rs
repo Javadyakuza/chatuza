@@ -29,7 +29,6 @@ pub fn initialize_new_tron_wallet(
         )));
     }
 
-    let new_wallet_info: QTronWallet;
     match diesel::insert_into(tron_wallets::table)
         .values(_new_wallet_info)
         .returning(QTronWallet::as_returning())

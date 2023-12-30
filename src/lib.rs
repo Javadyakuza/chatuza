@@ -46,7 +46,7 @@ pub fn add_new_user(
         .get_result(conn)
     {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
+            std::io::ErrorKind::Other,
             format!("{:?}", e),
         )));
     }
@@ -75,7 +75,7 @@ pub fn add_new_user(
         Ok(_) => Ok(user_info),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -126,7 +126,7 @@ pub fn update_user_credits(
         Ok(_) => Ok(get_user_with_username(conn, new_user_credits.username.as_str()).unwrap()),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -152,7 +152,7 @@ pub fn update_user_profile(
         Ok(_) => Ok(get_user_profile_with_user_id(conn, user_profile.user_id).unwrap()),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -215,7 +215,7 @@ pub fn delete_user(
         diesel::delete(user_profiles.filter(user_profiles::user_id.eq(_user_id))).execute(conn)
     {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
+            std::io::ErrorKind::Other,
             format!("{:?}", e),
         )));
     }
@@ -243,7 +243,7 @@ pub fn delete_user(
         Ok(_) => Ok(true),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -421,7 +421,7 @@ pub fn add_new_p2p_chat_room(
             Ok(res) => new_chat_room = res,
             Err(e) => {
                 return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
+                    std::io::ErrorKind::Other,
                     format!("{:?}", e),
                 )))
             }
@@ -437,7 +437,7 @@ pub fn add_new_p2p_chat_room(
             .get_result(_conn)
         {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )));
         }
@@ -526,7 +526,7 @@ pub fn delete_p2p_chat_room(
         .execute(_conn)
         {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )));
         }
@@ -539,7 +539,7 @@ pub fn delete_p2p_chat_room(
         Ok(_) => Ok(true),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -573,7 +573,7 @@ pub fn add_new_group_chat_room(
         Ok(res) => new_chat_room = res,
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -590,7 +590,7 @@ pub fn add_new_group_chat_room(
         .get_result(_conn)
     {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
+            std::io::ErrorKind::Other,
             format!("{:?}", e),
         )));
     }
@@ -622,7 +622,7 @@ pub fn add_new_group_chat_room(
             .get_result(_conn)
         {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )));
         }
@@ -689,7 +689,7 @@ pub fn update_group_chat_room_info(
         Ok(_) => Ok(get_group_chat_by_name(_conn, &new_chat_room_info.room_name).unwrap()),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -750,7 +750,7 @@ pub fn delete_group_chat_room(
     .execute(_conn)
     {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
+            std::io::ErrorKind::Other,
             format!("{:?}", e),
         )));
     }
@@ -761,7 +761,7 @@ pub fn delete_group_chat_room(
         Ok(_) => Ok(true),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -841,7 +841,7 @@ pub fn add_participant_to_group_chat_room(
         Ok(res) => Ok(res),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }
@@ -910,7 +910,7 @@ pub fn del_participant_from_group_chat_room(
         Ok(_) => Ok(true),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
+                std::io::ErrorKind::Other,
                 format!("{:?}", e),
             )))
         }

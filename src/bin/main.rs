@@ -1,33 +1,15 @@
 #![feature(decl_macro)] // helps us with the routing of our application
 
-#[macro_use]
 extern crate rocket; // imports all of the macros from the rocket crate
-
-use std::io::Read;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
-use std::thread;
-use std::time::Duration;
 
 use chatuza_db::api_models::*;
 use chatuza_db::db_models::*;
-use chatuza_db::db_models::*;
-use chatuza_db::*;
-// use rocket::data::FromDataSimple;
 use chatuza_db::wallet_lib::*;
 use chatuza_db::*;
-// Assuming your Diesel models and functions are here
-use diesel::prelude::*;
-use rocket::fairing::{Fairing, Info, Kind};
 use rocket::request::Form;
-use rocket::request::FormItem;
-use rocket::request::{FromRequest, Request};
-use rocket::State;
+use rocket::request::Request;
 use rocket::*;
-use rocket_contrib::json;
 use rocket_contrib::json::Json;
-use serde::Serialize;
 
 #[get("/user-via-username/<username>")]
 fn get_user_via_username(username: String) -> Json<Result<QUsers, String>> {
@@ -465,7 +447,6 @@ fn not_found(req: &Request) -> String {
 }
 
 fn main() {
-    let mut connection = &mut establish_connection();
     rocket::ignite()
         .register(catchers![not_found])
         .mount(

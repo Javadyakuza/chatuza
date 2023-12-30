@@ -1,7 +1,6 @@
 use diesel::prelude::*;
 // use merge_derivable;
 use crate::schema::chat_room_participants;
-use rocket::*;
 use serde::{self, Deserialize, Serialize};
 use struct_iterable::Iterable;
 

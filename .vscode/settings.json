@@ -2,5 +2,10 @@
   "editor.inlineSuggest.showToolbar": "always",
   "rust-analyzer.linkedProjects": ["./Cargo.toml", "./Cargo.toml"],
   "rust-analyzer.showUnlinkedFileNotification": false,
-  "cSpell.words": ["solana", "userid"]
+  "cSpell.words": [
+    "dotenv",
+    "dotenvy",
+    "solana",
+    "userid"
+  ]
 }
