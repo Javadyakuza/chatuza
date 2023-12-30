@@ -6,6 +6,8 @@ extern crate rocket; // imports all of the macros from the rocket crate
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
+use std::thread;
+use std::time::Duration;
 
 use chatuza_db::api_models::*;
 use chatuza_db::db_models::*;

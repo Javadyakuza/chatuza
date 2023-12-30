@@ -66,9 +66,6 @@ pub fn update_user_credits(
     let user_info: QUsers =
         get_user_with_username(conn, old_username.as_str()).expect("didn't find the user name !");
 
-    // checking for the password to not be the same as the previous one
-    assert!(new_user_credits.password != user_info.password);
-
     // checking for the duplicated username
 
     if let Some(_) = get_user_with_username(conn, &new_user_credits.username) {
@@ -118,7 +115,10 @@ pub fn update_user_profile(
     Ok(get_user_profile_with_user_id(conn, user_profile.user_id).unwrap())
 }
 
-pub fn delete_user(conn: &mut PgConnection, _user_id: i32) -> Result<String, String> {
+pub fn delete_user(conn: &mut PgConnection, _username: String) -> Result<bool, std::io::Error> {
+    let _user_id = get_user_with_username(conn, _username.as_str())
+        .unwrap()
+        .user_id;
     diesel::delete(user_profiles.filter(user_profiles::user_id.eq(_user_id)))
         .execute(conn)
         .expect("couldn't update user profile");
@@ -127,7 +127,7 @@ pub fn delete_user(conn: &mut PgConnection, _user_id: i32) -> Result<String, Str
         .execute(conn)
         .expect("couldn't update user profile");
 
-    Ok(format!("user id {} updated", &_user_id))
+    Ok(true)
 }
 
 // -- Users / UserProfiles GETTER functions -- //
