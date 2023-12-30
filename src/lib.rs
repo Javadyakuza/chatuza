@@ -1,16 +1,16 @@
 #![recursion_limit = "256"]
-pub mod models;
+pub mod db_models;
 pub mod schema;
 pub mod wallet_lib;
 
-use crate::models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
+use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
 use crate::schema::{chat_room_participants, chat_rooms, user_profiles, users};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
-use models::QChatRooms;
+use db_models::QChatRooms;
 use schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
@@ -291,7 +291,7 @@ pub fn add_new_group_chat_room(
 ) -> Result<i32, String> {
     // checking the owner existence
     if let None = get_user_with_user_id(_conn, group_owner_id) {
-        return Err(format!("user id {} doesnt exits", group_owner_id));
+        return Err(format!("user id {} doesn't exits", group_owner_id));
     }
 
     // creating the chat room

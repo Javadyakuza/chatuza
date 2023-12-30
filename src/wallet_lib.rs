@@ -1,5 +1,5 @@
 use crate::is_valid_user;
-use crate::models::{QSolanaWallet, QTronWallet, SolanaWallet, TronWallet};
+use crate::db_models::{QSolanaWallet, QTronWallet, SolanaWallet, TronWallet};
 use crate::schema::{solana_wallets, tron_wallets};
 use crate::schema::{solana_wallets::dsl::*, tron_wallets::dsl::*};
 pub use diesel;
