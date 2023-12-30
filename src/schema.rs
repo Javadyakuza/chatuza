@@ -25,7 +25,7 @@ diesel::table! {
         wallet_id -> Int4,
         user_id -> Int4,
         wallet_backup -> Bytea,
-        wallet_addr -> Nullable<Bytea>,
+        wallet_addr -> Bytea,
     }
 }
 
@@ -34,7 +34,7 @@ diesel::table! {
         wallet_id -> Int4,
         user_id -> Int4,
         wallet_backup -> Bytea,
-        wallet_addr -> Nullable<Bytea>,
+        wallet_addr -> Bytea,
     }
 }
 

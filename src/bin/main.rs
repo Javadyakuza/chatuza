@@ -14,6 +14,7 @@ use rocket_contrib::json;
 use rocket_contrib::json::Json;
 use rocket_contrib::templates::Template;
 use serde::Serialize;
+
 // getter api's //
 // #[get("/get-user-via-username/<username>")]
 // fn get_user_via_username(username: String) -> Users {

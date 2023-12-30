@@ -2,10 +2,10 @@ use diesel::prelude::*;
 // use merge_derivable;
 use crate::schema::chat_room_participants;
 use rocket::*;
-use serde::Serialize;
+use serde;
 use struct_iterable::Iterable;
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize, PartialEq)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable, PartialEq)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Users {
@@ -15,7 +15,7 @@ pub struct Users {
     pub password: String,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize, PartialEq)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable, PartialEq)]
 #[diesel(table_name = crate::schema::user_profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UserProfiles {
@@ -25,7 +25,7 @@ pub struct UserProfiles {
     pub profile_picture: Option<String>,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_rooms)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChatRooms {
@@ -34,7 +34,7 @@ pub struct ChatRooms {
     pub room_description: String,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_room_participants)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChatRoomParticipants {
@@ -44,24 +44,24 @@ pub struct ChatRoomParticipants {
     pub is_admin: bool,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::tron_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct TronWallet {
     pub user_id: i32,
-    pub wallet_addr: String,
+    pub wallet_addr: Vec<u8>,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::solana_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct SolanaWallet {
     pub user_id: i32,
-    pub wallet_addr: String,
+    pub wallet_addr: Vec<u8>,
 }
 // --  models with queryable primary keys -- //
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QUsers {
@@ -71,7 +71,7 @@ pub struct QUsers {
     pub password: String,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_rooms)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QChatRooms {
@@ -80,7 +80,7 @@ pub struct QChatRooms {
     pub room_description: String,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_room_participants)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QChatRoomParticipants {
@@ -109,20 +109,20 @@ allow_group_by!(
     chat_room_participants::is_admin
 );
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::solana_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QSolanaWallet {
     pub wallet_id: i32,
     pub user_id: i32,
-    pub wallet_addr: String,
+    pub wallet_addr: Vec<u8>,
 }
 
-#[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::tron_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QTronWallet {
     pub wallet_id: i32,
     pub user_id: i32,
-    pub wallet_addr: String,
+    pub wallet_addr: Vec<u8>,
 }
