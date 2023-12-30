@@ -31,10 +31,10 @@ fn get_user_via_username(username: String) -> Json<QUsers> {
     Json(get_user_with_username(&mut conn, username.as_str()).unwrap())
 }
 
-#[get("/user-via-username/<username>")]
-fn get_user_via_username(username: String) -> Json<QUsers> {
+#[get("/user-profile-via-username/<username>")]
+fn get_user_profile_via_username(username: String) -> Json<UserProfiles> {
     let mut conn = establish_connection();
-    Json(get_user_with_username(&mut conn, username.as_str()).unwrap())
+    Json(get_user_profile_with_username(&mut conn, username).unwrap())
 }
 
 #[get("/user-via-email/<email>")]
@@ -175,6 +175,7 @@ fn main() {
                 get_user_via_email,
                 get_user_via_username,
                 get_user_via_user_id,
+                get_user_profile_via_username,
                 get_chatroom_by_id,
                 get_chatroom_by_name,
                 get_group_owner_via_id,
