@@ -511,9 +511,12 @@ pub fn delete_group_chat_room(
 pub fn add_participant_to_group_chat_room(
     _conn: &mut PgConnection,
     _adding_user: &ChatRoomParticipants,
-) -> Result<(), String> {
+) -> Result<ChatRoomParticipants, Box<dyn std::error::Error>> {
     if !is_group_chat(_conn, _adding_user.chat_room_id) {
-        return Err(format!("couldn't find the group chat room"));
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "couldn't find the group chat room",
+        )));
     }
 
     // checking if the user is not already in the group
@@ -528,20 +531,23 @@ pub fn add_participant_to_group_chat_room(
         .unwrap();
 
     if chat_room_info.len() != 0 {
-        return Err(format!(
-            "user id {} is already in the group chat room id {}",
-            _adding_user.user_id, _adding_user.chat_room_id
-        ));
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!(
+                "user id {} is already in the group chat room id {}",
+                _adding_user.user_id, _adding_user.chat_room_id
+            ),
+        )));
     }
 
     // inserting the user to the participants table
-    diesel::insert_into(chat_room_participants::table)
+    let new_participant: ChatRoomParticipants = diesel::insert_into(chat_room_participants::table)
         .values(_adding_user)
         .returning(ChatRoomParticipants::as_returning())
         .get_result(_conn)
         .expect("couldn't insert user to the group");
 
-    Ok(())
+    Ok(new_participant)
 }
 
 pub fn del_participant_to_group_chat_room(

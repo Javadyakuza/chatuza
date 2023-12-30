@@ -80,8 +80,8 @@ pub struct UpdatedGroupChatRoomInfoIN {
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct NewGroupChatParticipantIN {
-    pub user_id_in: i32,
-    pub chat_room_id_in: i32,
+    pub username_in: String,
+    pub chat_room_name_in: String,
 }
 
 #[derive(FromForm, Debug, Serialize)]

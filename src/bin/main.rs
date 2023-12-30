@@ -235,6 +235,30 @@ fn update_gp(new_gp_info: Form<UpdatedGroupChatRoomInfoIN>) -> Json<QChatRooms> 
         .unwrap(),
     )
 }
+
+#[post("/add-user-to-gp", data = "<new_participant>")]
+fn add_user_to_gp(new_participant: Form<NewGroupChatParticipantIN>) -> Json<ChatRoomParticipants> {
+    let mut conn = establish_connection();
+    let _chat_room_id =
+        get_group_chat_by_name(&mut conn, &new_participant.chat_room_name_in.clone())
+            .unwrap()
+            .chat_room_id;
+    let _user_id = get_user_with_username(&mut conn, new_participant.username_in.clone().as_str())
+        .unwrap()
+        .user_id;
+    Json(
+        add_participant_to_group_chat_room(
+            &mut conn,
+            &ChatRoomParticipants {
+                chat_room_id: _chat_room_id,
+                user_id: _user_id,
+                is_admin: false,
+            },
+        )
+        .unwrap(),
+    )
+}
+
 #[post("/delete-gp", data = "<new_gp_info>")]
 fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
     let mut conn = establish_connection();
@@ -288,7 +312,8 @@ fn main() {
                 delete_p2p,
                 new_gp,
                 update_gp,
-                delete_gp
+                delete_gp,
+                add_user_to_gp
             ],
         )
         // .attach(DbConn::fairing())
