@@ -19,6 +19,7 @@ use schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, solana_wallets::dsl::*,
     tron_wallets::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
+use wallet_lib::{delete_solana_wallet, delete_tron_wallet};
 
 pub use std::env;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -182,15 +183,11 @@ pub fn delete_user(conn: &mut PgConnection, _username: &String) -> Result<bool, 
         .unwrap();
 
     if _tron_wallets.len() as u32 == 1 {
-        diesel::delete(tron_wallets.filter(tron_wallets::user_id.eq(_user_id)))
-            .execute(conn)
-            .expect("couldn't delete user tron wallet");
+        delete_tron_wallet(conn, _username).unwrap();
     }
 
     if _solana_wallets.len() as u32 == 1 {
-        diesel::delete(solana_wallets.filter(solana_wallets::user_id.eq(_user_id)))
-            .execute(conn)
-            .expect("couldn't delete user solana wallet");
+        delete_solana_wallet(conn, _username).unwrap();
     }
     diesel::delete(users.filter(users::user_id.eq(_user_id)))
         .execute(conn)
