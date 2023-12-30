@@ -24,7 +24,6 @@ diesel::table! {
     solana_wallets (wallet_id) {
         wallet_id -> Int4,
         user_id -> Int4,
-        pub_key -> Bytea,
         wallet_addr -> Bytea,
     }
 }
@@ -33,7 +32,6 @@ diesel::table! {
     tron_wallets (wallet_id) {
         wallet_id -> Int4,
         user_id -> Int4,
-        pub_key -> Bytea,
         wallet_addr -> Bytea,
     }
 }
