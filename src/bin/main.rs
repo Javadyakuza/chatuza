@@ -318,29 +318,30 @@ fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
     )
 }
 
-#[post("/delete-gp", data = "<new_gp_info>")]
-fn add_solana_wallet(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
+#[post("/add-tron-wallet", data = "<new_wallet_info>")]
+fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QSolanaWallet> {
     let mut conn = establish_connection();
+    let _user_id = get_user_with_username(&mut conn, &new_wallet_info.username_in)
+        .unwrap()
+        .user_id;
     Json(
-        delete_group_chat_room(
+        initialize_new_solana_wallet(
             &mut conn,
-            &new_gp_info.chat_room_name_in.clone(),
-            &new_gp_info.remover_username_in.clone(),
+            &SolanaWallet {
+                user_id: _user_id,
+                wallet_addr: new_wallet_info.wallet_addr.as_bytes().to_vec(),
+            },
         )
         .unwrap(),
     )
 }
-#[post("/delete-gp", data = "<new_gp_info>")]
-fn add_tron_wallet(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
+#[post("/add-tron-wallet", data = "<new_wallet_info>")]
+fn add_tron_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<bool> {
     let mut conn = establish_connection();
-    Json(
-        delete_group_chat_room(
-            &mut conn,
-            &new_gp_info.chat_room_name_in.clone(),
-            &new_gp_info.remover_username_in.clone(),
-        )
-        .unwrap(),
-    )
+    let _user_id = get_user_with_username(&mut conn, &new_wallet_info.username_in)
+        .unwrap()
+        .user_id;
+    Json(initialize_new_tron_wallet(&mut conn).unwrap())
 }
 #[get("/get-tron-addr_by_username/<username>")]
 fn get_tron_addr(username: String) -> Json<String> {

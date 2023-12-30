@@ -94,13 +94,7 @@ pub struct GroupChatParticipantToRemoveIN {
 // get functions are getting only one argument
 
 #[derive(FromForm, Debug, Serialize)]
-pub struct NewTronWalletIn {
+pub struct NewWalletIn {
     pub username_in: String,
     pub wallet_addr: String,
-}
-
-#[derive(FromForm, Debug, Serialize)]
-pub struct NewSolanaWalletIn {
-    pub username_in: String,
-    pub wallet_addr_in: String,
 }

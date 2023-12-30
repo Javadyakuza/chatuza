@@ -12,15 +12,21 @@ pub use std::env;
 pub fn initialize_new_tron_wallet(
     _conn: &mut PgConnection,
     new_wallet_info: &TronWallet,
-) -> Result<i32, String> {
+) -> Result<QTronWallet, Box<dyn std::error::Error>> {
     // Checking if user already has a wallet
     if get_user_tron_wallet(_conn, new_wallet_info.user_id).is_some() {
-        return Err("User already has a wallet".to_owned());
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "User already has a wallet".to_owned(),
+        )));
     }
 
     // Checking if user ID is valid
     if !is_valid_user(_conn, new_wallet_info.user_id) {
-        return Err("Invalid user ID provided".to_owned());
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "Invalid user ID provided".to_owned(),
+        )));
     }
 
     let new_wallet_info: QTronWallet = diesel::insert_into(tron_wallets::table)
@@ -34,21 +40,27 @@ pub fn initialize_new_tron_wallet(
             )
         })?;
 
-    Ok(new_wallet_info.user_id)
+    Ok(new_wallet_info)
 }
 
 pub fn initialize_new_solana_wallet(
     _conn: &mut PgConnection,
     new_wallet_info: &SolanaWallet,
-) -> Result<i32, String> {
+) -> Result<QSolanaWallet, Box<dyn std::error::Error>> {
     // Checking if user already has a wallet
     if get_user_solana_wallet(_conn, new_wallet_info.user_id).is_some() {
-        return Err("User already has a wallet".to_owned());
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "User already has a wallet".to_owned(),
+        )));
     }
 
     // Checking if user ID is valid
     if !is_valid_user(_conn, new_wallet_info.user_id) {
-        return Err("Invalid user ID provided".to_owned());
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "Invalid user ID provided".to_owned(),
+        )));
     }
 
     let new_wallet_info: QSolanaWallet = diesel::insert_into(solana_wallets::table)
@@ -62,7 +74,7 @@ pub fn initialize_new_solana_wallet(
             )
         })?;
 
-    Ok(new_wallet_info.user_id)
+    Ok(new_wallet_info)
 }
 
 pub fn get_user_tron_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option<QTronWallet> {
