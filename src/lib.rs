@@ -38,7 +38,7 @@ pub fn add_new_user(
     conn: &mut PgConnection,
     user_credits: &Users,
     user_profile: &mut UserProfiles,
-) -> Result<QUsers, Error> {
+) -> Result<QUsers, Box<dyn std::error::Error>> {
     // inserting user credits
     diesel::insert_into(users::table)
         .values(user_credits)
@@ -47,8 +47,16 @@ pub fn add_new_user(
         .expect("couldn't insert user credits");
 
     // fetching the user info
-    let user_info: QUsers =
-        get_user_with_username(conn, &user_credits.username).expect("didn't find the user id !");
+    let user_info: QUsers;
+    match get_user_with_username(conn, &user_credits.username) {
+        Ok(res) => user_info = res,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
 
     user_profile.user_id = user_info.user_id;
     let u_p: &UserProfiles = user_profile;
@@ -58,9 +66,7 @@ pub fn add_new_user(
         .values(u_p)
         .returning(UserProfiles::as_returning())
         .get_result(conn)
-        .expect("couldn't insert user credits");
-
-    println!("inserted user id {}", &user_info.user_id);
+        .expect("couldn't insert user profiles");
 
     Ok(user_info)
 }
@@ -70,19 +76,27 @@ pub fn update_user_credits(
     old_username: &String,
     new_user_credits: &Users,
 ) -> Result<QUsers, Box<dyn std::error::Error>> {
-    let user_info: QUsers =
-        get_user_with_username(conn, old_username.as_str()).expect("didn't find the user name !");
+    let user_info: QUsers;
+    match get_user_with_username(conn, old_username.as_str()) {
+        Ok(res) => user_info = res,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
 
     // checking for the duplicated username
 
-    if let Some(_) = get_user_with_username(conn, &new_user_credits.username) {
+    if get_user_with_username(conn, &new_user_credits.username).is_ok() {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             "username already exists !",
         )));
     }
 
-    if let Some(_) = get_user_with_email(conn, &new_user_credits.email) {
+    if get_user_with_email(conn, &new_user_credits.email).is_ok() {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             "email already exists !",
@@ -122,13 +136,22 @@ pub fn update_user_profile(
     Ok(get_user_profile_with_user_id(conn, user_profile.user_id).unwrap())
 }
 
-pub fn delete_user(conn: &mut PgConnection, _username: &String) -> Result<bool, std::io::Error> {
-    let _user_id = get_user_with_username(conn, _username.as_str())
-        .unwrap()
-        .user_id;
-
+pub fn delete_user(
+    conn: &mut PgConnection,
+    _username: &String,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let _user_id: i32;
+    match get_user_with_username(conn, _username.as_str()) {
+        Ok(res) => _user_id = res.user_id,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
     // deleting the users p2p chatroom's
-    if let Some(_chat_rooms) = get_user_p2p_chat_rooms_by_user_id(conn, _user_id) {
+    if let Ok(_chat_rooms) = get_user_p2p_chat_rooms_by_user_id(conn, _user_id) {
         for chat_room in _chat_rooms {
             let p2p_chat_room_participants =
                 get_chat_room_participants_by_id(conn, chat_room.chat_room_id).unwrap();
@@ -137,13 +160,13 @@ pub fn delete_user(conn: &mut PgConnection, _username: &String) -> Result<bool, 
                     .unwrap()
                     .username;
             let contact_username =
-                get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
+                get_user_with_user_id(conn, p2p_chat_room_participants[1].user_id)
                     .unwrap()
                     .username;
-            let _ = delete_p2p_chat_room(conn, &remover_username, &contact_username);
+            let _ = delete_p2p_chat_room(conn, &remover_username, &contact_username).unwrap();
         }
     }
-    if let Some(gps) = get_user_group_chat_rooms_by_user_id(conn, _user_id) {
+    if let Ok(gps) = get_user_group_chat_rooms_by_user_id(conn, _user_id) {
         for gp in gps {
             let group_owner = get_group_owner_by_id(conn, gp.chat_room_id).unwrap();
             if group_owner == _user_id {
@@ -174,13 +197,13 @@ pub fn delete_user(conn: &mut PgConnection, _username: &String) -> Result<bool, 
         .filter(tron_wallets::user_id.eq(_user_id))
         .select(QTronWallet::as_select())
         .load(conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     let _solana_wallets = solana_wallets
         .filter(solana_wallets::user_id.eq(_user_id))
         .select(QSolanaWallet::as_select())
         .load(conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if _tron_wallets.len() as u32 == 1 {
         delete_tron_wallet(conn, _username).unwrap();
@@ -197,7 +220,11 @@ pub fn delete_user(conn: &mut PgConnection, _username: &String) -> Result<bool, 
 
 // -- Users / UserProfiles GETTER functions -- //
 
-pub fn get_user_with_username(_conn: &mut PgConnection, _username: &str) -> Result<QUsers, Box<dyn std::error::Error>> {
+// EH
+pub fn get_user_with_username(
+    _conn: &mut PgConnection,
+    _username: &str,
+) -> Result<QUsers, Box<dyn std::error::Error>> {
     let user_row: Vec<QUsers> = users
         .filter(username.eq(&_username))
         .select(QUsers::as_select())
@@ -217,8 +244,11 @@ pub fn get_user_with_username(_conn: &mut PgConnection, _username: &str) -> Resu
         )))
     }
 }
-
-pub fn get_user_with_email(_conn: &mut PgConnection, _email: &str) -> Result<QUsers, Box<dyn std::error::Error>> {
+// EH
+pub fn get_user_with_email(
+    _conn: &mut PgConnection,
+    _email: &str,
+) -> Result<QUsers, Box<dyn std::error::Error>> {
     let user_row: Vec<QUsers> = users
         .filter(email.eq(&_email))
         .select(QUsers::as_select())
@@ -239,8 +269,11 @@ pub fn get_user_with_email(_conn: &mut PgConnection, _email: &str) -> Result<QUs
         )))
     }
 }
-
-pub fn get_user_with_user_id(_conn: &mut PgConnection, _user_id: i32) -> Result<QUsers, Box<dyn std::error::Error>> {
+// EH
+pub fn get_user_with_user_id(
+    _conn: &mut PgConnection,
+    _user_id: i32,
+) -> Result<QUsers, Box<dyn std::error::Error>> {
     let user_row: Vec<QUsers> = users
         .filter(users::user_id.eq(&_user_id))
         .select(QUsers::as_select())
@@ -258,13 +291,14 @@ pub fn get_user_with_user_id(_conn: &mut PgConnection, _user_id: i32) -> Result<
         Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "user id not found !",
-        )))    }
+        )))
+    }
 }
-
+// EH
 pub fn get_user_profile_with_user_id(
     _conn: &mut PgConnection,
     _user_id: i32,
-) -> Option<UserProfiles> {
+) -> Result<UserProfiles, Box<dyn std::error::Error>> {
     let user_row: Vec<UserProfiles> = user_profiles
         .filter(user_profiles::user_id.eq(&_user_id))
         .select(UserProfiles::as_select())
@@ -272,43 +306,51 @@ pub fn get_user_profile_with_user_id(
         .unwrap_or(vec![]);
 
     if user_row.len() == 1 {
-        Some(UserProfiles {
+        Ok(UserProfiles {
             user_id: _user_id,
             bio: user_row[0].bio.clone(),
             profile_picture: user_row[0].profile_picture.clone(),
         })
     } else {
-        // some thing is wrong
-        None
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "user id not found !",
+        )))
     }
 }
-
+// EH
 pub fn get_user_profile_with_username(
     _conn: &mut PgConnection,
     _username: &String,
 ) -> Result<UserProfiles, Box<dyn std::error::Error>> {
-    let _user_id = get_user_with_username(_conn, _username.as_str())
-        .(|| {
+    let _user_id;
+    match get_user_with_username(_conn, _username.as_str()) {
+        Ok(res) => _user_id = res.user_id,
+        Err(e) => {
             return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                "email already exists !",
-            )));
-        });
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
     let user_row: Vec<UserProfiles> = user_profiles
         .filter(user_profiles::user_id.eq(&_user_id))
         .select(UserProfiles::as_select())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if user_row.len() == 1 {
-        Some(UserProfiles {
+        Ok(UserProfiles {
             user_id: _user_id,
             bio: user_row[0].bio.clone(),
             profile_picture: user_row[0].profile_picture.clone(),
         })
     } else {
         // some thing is wrong
-        None
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "username not found !",
+        )))
     }
 }
 
@@ -692,85 +734,108 @@ pub fn del_participant_from_group_chat_room(
 pub fn get_chat_room_participants_by_id(
     _conn: &mut PgConnection,
     _chat_room_id: i32,
-) -> Option<Vec<ChatRoomParticipants>> {
+) -> Result<Vec<ChatRoomParticipants>, Box<dyn std::error::Error>> {
     // getting the participants
     let participants: Vec<ChatRoomParticipants> = chat_room_participants
         .filter(chat_room_participants::chat_room_id.eq(_chat_room_id))
         .select(ChatRoomParticipants::as_select())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if participants.len() == 0 {
         // chat room id doesn't exists
-        None
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "chat room id not found or it has no members!",
+        )))
     } else {
-        Some(participants)
+        Ok(participants)
     }
 }
 
 pub fn get_chat_room_participants_by_name(
     _conn: &mut PgConnection,
     _chat_room_name: &String,
-) -> Option<Vec<ChatRoomParticipants>> {
+) -> Result<Vec<ChatRoomParticipants>, Box<dyn std::error::Error>> {
     let _chat_room: Vec<QChatRooms> = chat_rooms
         .filter(chat_rooms::room_name.eq(_chat_room_name))
         .select(QChatRooms::as_select())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if _chat_room.len() != 1 {
-        return None;
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("chat room {} not found !", _chat_room_name),
+        )));
     }
     // getting the participants
     let participants: Vec<ChatRoomParticipants> = chat_room_participants
         .filter(chat_room_participants::chat_room_id.eq(_chat_room[0].chat_room_id))
         .select(ChatRoomParticipants::as_select())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if participants.len() == 0 {
         // chat room id doesn't exists
-        None
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "chat room id not found or it has no members",
+        )))
     } else {
-        Some(participants)
+        Ok(participants)
     }
 }
 
-pub fn get_group_owner_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Option<i32> {
-    let _chat_room_owner = chat_room_participants
+pub fn get_group_owner_by_id(
+    _conn: &mut PgConnection,
+    _chat_room_id: i32,
+) -> Result<i32, Box<dyn std::error::Error>> {
+    // checking if the gp is valid
+    if !is_group_chat(_conn, _chat_room_id) {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "invalid chat room id !",
+        )));
+    }
+    let _chat_room_owner: Vec<ChatRoomParticipants> = chat_room_participants
         .filter(
             chat_room_participants::chat_room_id
                 .eq(_chat_room_id)
                 .and(chat_room_participants::is_admin.eq(true)),
         )
-        .select(diesel::dsl::min(chat_room_participants::user_id))
-        .load::<Option<i32>>(_conn)
-        .unwrap();
-
-    println!("{:?}", _chat_room_owner);
+        .select(ChatRoomParticipants::as_select())
+        .load(_conn)
+        .unwrap_or(vec![]);
 
     if _chat_room_owner.len() != 1 {
         // write now only one admin is supported
-        return None;
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "chat room owner not found !",
+        )))
     } else {
-        _chat_room_owner[0]
+        Ok(_chat_room_owner[0].user_id)
     }
 }
 
 pub fn get_group_chat_by_name(
     _conn: &mut PgConnection,
     _chat_room_name: &String,
-) -> Option<QChatRooms> {
+) -> Result<QChatRooms, Box<dyn std::error::Error>> {
     let _chat_rooms: Vec<QChatRooms> = chat_rooms
         .filter(chat_rooms::room_name.eq(_chat_room_name))
         .select(QChatRooms::as_returning())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if _chat_rooms.len() != 1 {
-        return None;
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{} chat room not found !", _chat_room_name),
+        )))
     } else {
-        return Some(QChatRooms {
+        return Ok(QChatRooms {
             chat_room_id: _chat_rooms[0].chat_room_id,
             room_name: _chat_rooms[0].room_name.clone(),
             room_description: _chat_rooms[0].room_description.clone(),
@@ -784,7 +849,7 @@ pub fn get_group_chat_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Opt
         .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
         .select(QChatRooms::as_returning())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if _chat_rooms.len() != 1 {
         return None;
@@ -802,7 +867,7 @@ pub fn is_group_chat(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
         .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
         .select(ChatRooms::as_returning())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if chat_room_info.len() != 1 {
         false
@@ -818,7 +883,7 @@ pub fn is_valid_chatroom(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
         .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
         .select(ChatRooms::as_returning())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if chat_room_info.len() != 1 {
         false
@@ -832,7 +897,7 @@ pub fn is_valid_user(_conn: &mut PgConnection, _user_id: i32) -> bool {
         .filter(users::user_id.eq(_user_id))
         .select(Users::as_returning())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if chat_room_info.len() != 1 {
         false
@@ -850,7 +915,7 @@ pub fn is_user_in_chat_room(_conn: &mut PgConnection, _chat_room_id: i32, _user_
         )
         .select(ChatRoomParticipants::as_returning())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if chat_room_info.len() != 1 {
         false
@@ -862,7 +927,7 @@ pub fn is_user_in_chat_room(_conn: &mut PgConnection, _chat_room_id: i32, _user_
 pub fn get_user_p2p_chat_rooms_by_user_id(
     _conn: &mut PgConnection,
     _user_id: i32,
-) -> Option<Vec<QChatRooms>> {
+) -> Result<Vec<QChatRooms>, Box<dyn std::error::Error>> {
     let mut _chat_rooms: Vec<QChatRooms> = chat_rooms
         .inner_join(
             chat_room_participants
@@ -872,20 +937,23 @@ pub fn get_user_p2p_chat_rooms_by_user_id(
         .filter(chat_rooms::room_description.eq("private room")) // Add this filter for room name
         .select(QChatRooms::as_select())
         .load(_conn)
-        .unwrap();
+        .unwrap_or(vec![]);
 
     if _chat_rooms.len() == 0 {
         // chat room id doesn't exists
-        None
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("no p2p chat rooms for user id {} ", _user_id),
+        )))
     } else {
-        Some(_chat_rooms)
+        Ok(_chat_rooms)
     }
 }
 
 pub fn get_user_group_chat_rooms_by_user_id(
     _conn: &mut PgConnection,
     _user_id: i32,
-) -> Option<Vec<QChatRooms>> {
+) -> Result<Vec<QChatRooms>, Box<dyn std::error::Error>> {
     let mut _chat_rooms: Vec<QChatRooms> = chat_rooms
         .inner_join(
             chat_room_participants
@@ -895,13 +963,16 @@ pub fn get_user_group_chat_rooms_by_user_id(
         .filter(chat_rooms::room_description.ne("private room")) // Add this filter for room name
         .select(QChatRooms::as_select())
         .load(_conn)
-        .unwrap(); // this function never fails, if there is none we will get a empty vector
+        .unwrap_or(vec![]); // this function never fails, if there is none we will get a empty vector
 
     if _chat_rooms.len() == 0 {
         // chat room id doesn't exists
-        None
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("no group chat rooms for user id {} ", _user_id),
+        )))
     } else {
-        Some(_chat_rooms)
+        Ok(_chat_rooms)
     }
 }
 
@@ -911,11 +982,11 @@ pub fn get_two_users_p2p_chat_room(
     _user_id_2: i32,
 ) -> Option<QChatRooms> {
     assert!(
-        get_user_with_user_id(_conn, _user_id_1).is_some(),
+        get_user_with_user_id(_conn, _user_id_1).is_ok(),
         "first user id doesn't exist's"
     );
     assert!(
-        get_user_with_user_id(_conn, _user_id_2).is_some(),
+        get_user_with_user_id(_conn, _user_id_2).is_ok(),
         "second user id doesn't exist's"
     );
     let _chat_room_id;

@@ -30,51 +30,76 @@ use rocket_contrib::json::Json;
 use serde::Serialize;
 
 #[get("/user-via-username/<username>")]
-fn get_user_via_username(username: String) -> Json<QUsers> {
+fn get_user_via_username(username: String) -> Json<Result<QUsers, String>> {
     let mut conn = establish_connection();
-    Json(get_user_with_username(&mut conn, username.as_str()).unwrap())
+    match get_user_with_username(&mut conn, username.as_str()) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/user-profile-via-username/<username>")]
 fn get_user_profile_via_username(username: String) -> Json<Result<UserProfiles, String>> {
     let mut conn = establish_connection();
-    Json(get_user_profile_with_username(&mut conn, &username).unwrap_or_else(|| "".to_owned()))
+    match get_user_profile_with_username(&mut conn, &username) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/user-via-email/<email>")]
-fn get_user_via_email(email: String) -> Json<QUsers> {
+fn get_user_via_email(email: String) -> Json<Result<QUsers, String>> {
     let mut conn = establish_connection();
-    Json(get_user_with_email(&mut conn, email.as_str()).unwrap())
+    match get_user_with_email(&mut conn, email.as_str()) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/user-via-userid/<user_id>")]
-fn get_user_via_user_id(user_id: i32) -> Json<QUsers> {
+fn get_user_via_user_id(user_id: i32) -> Json<Result<QUsers, String>> {
     let mut conn = establish_connection();
-    Json(get_user_with_user_id(&mut conn, user_id).unwrap())
+
+    match get_user_with_user_id(&mut conn, user_id) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/chatroom-participants-by-id/<chatroom_id>")]
-fn get_chatroom_by_id(chatroom_id: i32) -> Json<Vec<ChatRoomParticipants>> {
+fn get_chatroom_by_id(chatroom_id: i32) -> Json<Result<Vec<ChatRoomParticipants>, String>> {
     let mut conn = establish_connection();
-    Json(get_chat_room_participants_by_id(&mut conn, chatroom_id).unwrap())
+    match get_chat_room_participants_by_id(&mut conn, chatroom_id) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/chatroom-participants-by-name/<chatroom_name>")]
-fn get_chatroom_by_name(chatroom_name: String) -> Json<Vec<ChatRoomParticipants>> {
+fn get_chatroom_by_name(chatroom_name: String) -> Json<Result<Vec<ChatRoomParticipants>, String>> {
     let mut conn = establish_connection();
-    Json(get_chat_room_participants_by_name(&mut conn, &chatroom_name).unwrap())
+    match get_chat_room_participants_by_name(&mut conn, &chatroom_name) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/group-owner/<owner_id>")]
-fn get_group_owner_via_id(owner_id: i32) -> Json<i32> {
+fn get_group_owner_via_id(owner_id: i32) -> Json<Result<i32, String>> {
     let mut conn = establish_connection();
-    Json(get_group_owner_by_id(&mut conn, owner_id).unwrap())
+    match get_group_owner_by_id(&mut conn, owner_id) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/group_by_name/<chatroom_name>")]
-fn get_chatroom_id_via_name(chatroom_name: String) -> Json<QChatRooms> {
+fn get_chatroom_id_via_name(chatroom_name: String) -> Json<Result<QChatRooms, String>> {
     let mut conn = establish_connection();
-    Json(get_group_chat_by_name(&mut conn, &chatroom_name).unwrap())
+    match get_group_chat_by_name(&mut conn, &chatroom_name) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[get("/is_valid_gp/<chatroom_id>")]
@@ -101,71 +126,83 @@ fn validate_chatroom_user(user_id: i32, chatroom_id: i32) -> Json<bool> {
     Json(is_user_in_chat_room(&mut conn, user_id, chatroom_id))
 }
 
-#[get("/user_all_gp/<user_id>")]
-fn get_all_user_groups(user_id: i32) -> Json<Vec<QChatRooms>> {
+#[get("/user_all_p2p/<user_id>")]
+fn get_all_user_p2p(user_id: i32) -> Json<Result<Vec<QChatRooms>, String>> {
     let mut conn = establish_connection();
-    Json(get_user_p2p_chat_rooms_by_user_id(&mut conn, user_id).unwrap())
+
+    match get_user_p2p_chat_rooms_by_user_id(&mut conn, user_id) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
-#[get("/user_all_p2p/<user_id>")]
-fn get_all_user_p2p(user_id: i32) -> Json<Vec<QChatRooms>> {
+#[get("/user_all_gp/<user_id>")]
+fn get_all_user_groups(user_id: i32) -> Json<Result<Vec<QChatRooms>, String>> {
     let mut conn = establish_connection();
-    Json(get_user_group_chat_rooms_by_user_id(&mut conn, user_id).unwrap())
+
+    match get_user_group_chat_rooms_by_user_id(&mut conn, user_id) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/create-user", data = "<new_user>")]
-fn new_user(new_user: Form<NewUserIN>) -> Json<QUsers> {
+fn new_user(new_user: Form<NewUserIN>) -> Json<Result<QUsers, String>> {
     let mut conn = establish_connection();
-    Json(
-        add_new_user(
-            &mut conn,
-            &Users {
-                username: new_user.username_in.clone(),
-                email: new_user.email_in.clone(),
-                password: new_user.password_in.clone(),
-            },
-            &mut UserProfiles {
-                user_id: 0,
-                bio: new_user.bio_in.clone(),
-                profile_picture: new_user.profile_picture_in.clone(),
-            },
-        )
-        .unwrap(),
-    )
+    match add_new_user(
+        &mut conn,
+        &Users {
+            username: new_user.username_in.clone(),
+            email: new_user.email_in.clone(),
+            password: new_user.password_in.clone(),
+        },
+        &mut UserProfiles {
+            user_id: 0,
+            bio: new_user.bio_in.clone(),
+            profile_picture: new_user.profile_picture_in.clone(),
+        },
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/update-user-credits", data = "<new_credits>")]
-fn update_user_conditionals(new_credits: Form<UpdatedUserCreditsIN>) -> Json<QUsers> {
+fn update_user_conditionals(
+    new_credits: Form<UpdatedUserCreditsIN>,
+) -> Json<Result<QUsers, String>> {
     let mut conn = establish_connection();
-    Json(
-        update_user_credits(
-            &mut conn,
-            &new_credits.username_out.clone(),
-            &Users {
-                username: new_credits.username_in.clone(),
-                email: new_credits.email_in.clone(),
-                password: new_credits.password_in.clone(),
-            },
-        )
-        .unwrap(),
-    )
+    match update_user_credits(
+        &mut conn,
+        &new_credits.username_out.clone(),
+        &Users {
+            username: new_credits.username_in.clone(),
+            email: new_credits.email_in.clone(),
+            password: new_credits.password_in.clone(),
+        },
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/update-user-profile", data = "<new_profile>")]
-fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<UserProfiles> {
+fn update_user_profile_api(
+    new_profile: Form<UpdatedUserProfileIN>,
+) -> Json<Result<UserProfiles, String>> {
     let mut conn = establish_connection();
-    Json(
-        update_user_profile(
-            &mut conn,
-            &new_profile.username_in.clone(),
-            &mut UserProfiles {
-                user_id: 0,
-                bio: Some(new_profile.bio_in.clone()),
-                profile_picture: Some(new_profile.profile_picture_in.clone()),
-            },
-        )
-        .unwrap(),
-    )
+    match update_user_profile(
+        &mut conn,
+        &new_profile.username_in.clone(),
+        &mut UserProfiles {
+            user_id: 0,
+            bio: Some(new_profile.bio_in.clone()),
+            profile_picture: Some(new_profile.profile_picture_in.clone()),
+        },
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/delete-user", data = "<username>")]
