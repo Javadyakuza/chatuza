@@ -25,6 +25,7 @@ diesel::table! {
         wallet_id -> Int4,
         user_id -> Int4,
         wallet_addr -> Bytea,
+        wallet_backup -> Bytea,
     }
 }
 
@@ -33,6 +34,7 @@ diesel::table! {
         wallet_id -> Int4,
         user_id -> Int4,
         wallet_addr -> Bytea,
+        wallet_backup -> Bytea,
     }
 }
 
