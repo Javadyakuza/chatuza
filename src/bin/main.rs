@@ -386,22 +386,25 @@ fn delete_user_from_gp(
 }
 
 #[post("/add-solana-wallet", data = "<new_wallet_info>")]
-fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QSolanaWallet> {
+fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<Result<QSolanaWallet, String>> {
     let mut conn = establish_connection();
-    let _user_id = get_user_with_username(&mut conn, &new_wallet_info.username_in)
-        .unwrap()
-        .user_id;
-    Json(
-        initialize_new_solana_wallet(
-            &mut conn,
-            &SolanaWallet {
-                user_id: _user_id,
-                wallet_addr: new_wallet_info.wallet_addr_in.as_bytes().to_vec(),
-                wallet_backup: new_wallet_info.wallet_backup_in.as_bytes().to_vec(),
-            },
-        )
-        .unwrap(),
-    )
+
+    let _user_id;
+    match get_user_with_username(&mut conn, &new_wallet_info.username_in) {
+        Ok(res) => _user_id = res.user_id,
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+    match initialize_new_solana_wallet(
+        &mut conn,
+        &SolanaWallet {
+            user_id: _user_id,
+            wallet_addr: new_wallet_info.wallet_addr_in.as_bytes().to_vec(),
+            wallet_backup: new_wallet_info.wallet_backup_in.as_bytes().to_vec(),
+        },
+    ) {
+        Ok(res) => Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
 }
 #[post("/add-tron-wallet", data = "<new_wallet_info>")]
 fn add_tron_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QTronWallet> {
