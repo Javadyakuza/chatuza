@@ -260,110 +260,129 @@ fn delete_p2p(new_gp_info: Form<DeleteP2PChatRoomIN>) -> Json<Result<bool, Strin
 }
 
 #[post("/create-gp", data = "<new_gp_info>")]
-fn new_gp(new_gp_info: Json<NewGroupChatRoomIN>) -> Json<QChatRooms> {
+fn new_gp(new_gp_info: Json<NewGroupChatRoomIN>) -> Json<Result<QChatRooms, String>> {
     let mut conn = establish_connection();
-
-    Json(
-        add_new_group_chat_room(
-            &mut conn,
-            &ChatRooms {
-                room_name: new_gp_info.room_name_in.clone(),
-                room_description: new_gp_info.room_description_in.clone(),
-                chat_room_pubkey: new_gp_info.chat_room_pubkey.as_bytes().to_vec(),
-            },
-            &(new_gp_info.group_owner_username_in.clone()),
-            new_gp_info.group_members_in.to_owned(),
-        )
-        .unwrap(),
-    )
+    match add_new_group_chat_room(
+        &mut conn,
+        &ChatRooms {
+            room_name: new_gp_info.room_name_in.clone(),
+            room_description: new_gp_info.room_description_in.clone(),
+            chat_room_pubkey: new_gp_info.chat_room_pubkey.as_bytes().to_vec(),
+        },
+        &(new_gp_info.group_owner_username_in.clone()),
+        new_gp_info.group_members_in.to_owned(),
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/update-gp-info", data = "<new_gp_info>")]
-fn update_gp(new_gp_info: Form<UpdatedGroupChatRoomInfoIN>) -> Json<QChatRooms> {
+fn update_gp(new_gp_info: Form<UpdatedGroupChatRoomInfoIN>) -> Json<Result<QChatRooms, String>> {
     let mut conn = establish_connection();
-    Json(
-        update_group_chat_room_info(
-            &mut conn,
-            &new_gp_info.old_chat_room_name_in.clone(),
-            &UpdatableChatRooms {
-                room_name: new_gp_info.room_name_in.clone(),
-                room_description: new_gp_info.room_description_in.clone(),
-            },
-            &new_gp_info.editor_username_in.clone(),
-        )
-        .unwrap(),
-    )
-}
-
-#[post("/add-user-to-gp", data = "<new_participant>")]
-fn add_user_to_gp(new_participant: Form<NewGroupChatParticipantIN>) -> Json<ChatRoomParticipants> {
-    let mut conn = establish_connection();
-    let _chat_room_id =
-        get_group_chat_by_name(&mut conn, &new_participant.chat_room_name_in.clone())
-            .unwrap()
-            .chat_room_id;
-    let _user_id = get_user_with_username(&mut conn, new_participant.username_in.clone().as_str())
-        .unwrap()
-        .user_id;
-    Json(
-        add_participant_to_group_chat_room(
-            &mut conn,
-            &ChatRoomParticipants {
-                chat_room_id: _chat_room_id,
-                user_id: _user_id,
-                is_admin: false,
-            },
-            &new_participant.adder_username_in,
-        )
-        .unwrap(),
-    )
-}
-
-#[post("/delete-user-from-gp", data = "<removing_participant>")]
-fn delete_user_from_gp(removing_participant: Form<GroupChatParticipantToRemoveIN>) -> Json<bool> {
-    let mut conn = establish_connection();
-    let _chat_room_id =
-        get_group_chat_by_name(&mut conn, &removing_participant.chat_room_name_in.clone())
-            .unwrap()
-            .chat_room_id;
-    let _removing_user_id =
-        get_user_with_username(&mut conn, removing_participant.username_in.clone().as_str())
-            .unwrap()
-            .user_id;
-    let _remover_user_id = get_user_with_username(
+    match update_group_chat_room_info(
         &mut conn,
-        removing_participant.remover_username_in.clone().as_str(),
-    )
-    .unwrap()
-    .user_id;
-
-    let _admin = get_group_owner_by_id(&mut conn, _chat_room_id).unwrap();
-
-    Json(
-        del_participant_from_group_chat_room(
-            &mut conn,
-            &ChatRoomParticipants {
-                chat_room_id: _chat_room_id,
-                user_id: _removing_user_id,
-                is_admin: _remover_user_id == _admin,
-            },
-            _remover_user_id,
-        )
-        .unwrap(),
-    )
+        &new_gp_info.old_chat_room_name_in.clone(),
+        &UpdatableChatRooms {
+            room_name: new_gp_info.room_name_in.clone(),
+            room_description: new_gp_info.room_description_in.clone(),
+        },
+        &new_gp_info.editor_username_in.clone(),
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/delete-gp", data = "<new_gp_info>")]
-fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
+fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<Result<bool, String>> {
     let mut conn = establish_connection();
-    Json(
-        delete_group_chat_room(
-            &mut conn,
-            &new_gp_info.chat_room_name_in.clone(),
-            &new_gp_info.remover_username_in.clone(),
-        )
-        .unwrap(),
-    )
+    match delete_group_chat_room(
+        &mut conn,
+        &new_gp_info.chat_room_name_in.clone(),
+        &new_gp_info.remover_username_in.clone(),
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
+}
+#[post("/add-user-to-gp", data = "<new_participant>")]
+fn add_user_to_gp(
+    new_participant: Form<NewGroupChatParticipantIN>,
+) -> Json<Result<ChatRoomParticipants, String>> {
+    let mut conn = establish_connection();
+    let _chat_room_id;
+
+    match get_group_chat_by_name(&mut conn, &new_participant.chat_room_name_in.clone()) {
+        Ok(res) => _chat_room_id = res.chat_room_id,
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+
+    let _user_id: i32;
+    match get_user_with_username(&mut conn, new_participant.username_in.clone().as_str()) {
+        Ok(res) => _user_id = res.user_id,
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
+
+    match add_participant_to_group_chat_room(
+        &mut conn,
+        &ChatRoomParticipants {
+            chat_room_id: _chat_room_id,
+            user_id: _user_id,
+            is_admin: false,
+        },
+        &new_participant.adder_username_in,
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
+}
+
+#[post("/delete-user-from-gp", data = "<removing_participant>")]
+fn delete_user_from_gp(
+    removing_participant: Form<GroupChatParticipantToRemoveIN>,
+) -> Json<Result<bool, String>> {
+    let mut conn = establish_connection();
+
+    let _chat_room_id;
+    match get_group_chat_by_name(&mut conn, &removing_participant.chat_room_name_in.clone()) {
+        Ok(res) => _chat_room_id = res.chat_room_id,
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+
+    let _removing_user_id;
+    match get_user_with_username(&mut conn, removing_participant.username_in.clone().as_str()) {
+        Ok(res) => _removing_user_id = res.user_id,
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+
+    let _remover_user_id;
+    match get_user_with_username(
+        &mut conn,
+        removing_participant.remover_username_in.clone().as_str(),
+    ) {
+        Ok(res) => _remover_user_id = res.user_id,
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+
+    let _admin;
+    match get_group_owner_by_id(&mut conn, _chat_room_id) {
+        Ok(res) => _admin = res,
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+
+    match del_participant_from_group_chat_room(
+        &mut conn,
+        &ChatRoomParticipants {
+            chat_room_id: _chat_room_id,
+            user_id: _removing_user_id,
+            is_admin: _remover_user_id == _admin,
+        },
+        _remover_user_id,
+    ) {
+        Ok(res) => Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
 }
 
 #[post("/add-solana-wallet", data = "<new_wallet_info>")]
