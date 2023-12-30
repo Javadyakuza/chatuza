@@ -550,22 +550,28 @@ pub fn add_participant_to_group_chat_room(
     Ok(new_participant)
 }
 
-pub fn del_participant_to_group_chat_room(
+pub fn del_participant_from_group_chat_room(
     _conn: &mut PgConnection,
     _removing_user: &ChatRoomParticipants,
     remover_user_id: i32,
-) -> Result<(), String> {
+) -> Result<bool, Box<dyn std::error::Error>> {
     if !is_group_chat(_conn, _removing_user.chat_room_id) {
-        return Err(format!("couldn't find the group chat room"));
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "couldn't find the group chat room",
+        )));
     }
 
     // checking if the remover is the admin
     // this will also check if the chat room id is a group chat room or not
     if remover_user_id != get_group_owner_by_id(_conn, _removing_user.chat_room_id).unwrap() {
-        return Err(format!(
-            "user id {} is not allowed to remove users from group",
-            remover_user_id
-        ));
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!(
+                "user id {} is not allowed to remove users from group",
+                remover_user_id
+            ),
+        )));
     }
     // checking if the user is in the group
     let chat_room_info: Vec<ChatRoomParticipants> = chat_room_participants
@@ -579,10 +585,13 @@ pub fn del_participant_to_group_chat_room(
         .unwrap();
 
     if chat_room_info.len() != 1 {
-        return Err(format!(
-            "user id {} is not in the group chat room id {}",
-            _removing_user.user_id, _removing_user.chat_room_id
-        ));
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!(
+                "user id {} is already in the group chat room id {}",
+                _removing_user.user_id, _removing_user.chat_room_id
+            ),
+        )));
     }
 
     // deleting the user from the participants table
@@ -592,7 +601,7 @@ pub fn del_participant_to_group_chat_room(
     .execute(_conn)
     .unwrap();
 
-    Ok(())
+    Ok(true)
 }
 
 pub fn get_chat_room_participants_by_id(

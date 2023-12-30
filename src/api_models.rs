@@ -86,10 +86,9 @@ pub struct NewGroupChatParticipantIN {
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct GroupChatParticipantToRemoveIN {
-    pub chat_room_id_in: i32,
-    pub user_id_in: i32,
-    pub is_admin_in: bool,
-    pub remover_user_id_in: i32,
+    pub chat_room_name_in: String,
+    pub username_in: String,
+    pub remover_username_in: String,
 }
 
 // get functions are getting only one argument
