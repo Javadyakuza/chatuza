@@ -99,9 +99,11 @@ pub fn get_user_tron_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option<Q
         .load::<QTronWallet>(_conn)
         .unwrap();
 
-    assert!(wallets.len() == 1);
-
-    wallets.into_iter().next()
+    if wallets.len() == 1 {
+        wallets.into_iter().next()
+    } else {
+        None
+    }
 }
 
 pub fn get_user_solana_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option<QSolanaWallet> {
@@ -111,7 +113,9 @@ pub fn get_user_solana_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option
         .load::<QSolanaWallet>(_conn)
         .unwrap();
 
-    assert!(wallets.len() == 1);
-
-    wallets.into_iter().next()
+    if wallets.len() == 1 {
+        wallets.into_iter().next()
+    } else {
+        None
+    }
 }

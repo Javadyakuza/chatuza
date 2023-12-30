@@ -9,7 +9,7 @@ use crate::schema::{
     chat_room_participants, chat_rooms, solana_wallets, tron_wallets, user_profiles, users,
 };
 use chrono::Local;
-use db_models::{QChatRooms, QTronWallet, UpdatableChatRooms};
+use db_models::{QChatRooms, QSolanaWallet, QTronWallet, UpdatableChatRooms};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
@@ -127,35 +127,41 @@ pub fn delete_user(conn: &mut PgConnection, _username: String) -> Result<bool, s
         .user_id;
 
     // deleting the users p2p chatroom's
-    for chat_room in get_user_p2p_chat_rooms_by_user_id(conn, _user_id).unwrap() {
-        let p2p_chat_room_participants =
-            get_chat_room_participants_by_id(conn, chat_room.chat_room_id).unwrap();
-        let remover_username = get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
-            .unwrap()
-            .username;
-        let contact_username = get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
-            .unwrap()
-            .username;
-        let _ = delete_p2p_chat_room(conn, &remover_username, &contact_username);
+    if let Some(_chat_rooms) = get_user_p2p_chat_rooms_by_user_id(conn, _user_id) {
+        for chat_room in _chat_rooms {
+            let p2p_chat_room_participants =
+                get_chat_room_participants_by_id(conn, chat_room.chat_room_id).unwrap();
+            let remover_username =
+                get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
+                    .unwrap()
+                    .username;
+            let contact_username =
+                get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
+                    .unwrap()
+                    .username;
+            let _ = delete_p2p_chat_room(conn, &remover_username, &contact_username);
+        }
     }
-
-    for gp in get_user_group_chat_rooms_by_user_id(conn, _user_id).unwrap() {
-        let group_owner = get_group_owner_by_id(conn, gp.chat_room_id).unwrap();
-        if group_owner == _user_id {
-            // deleting users owned group chats
-            let _ = delete_group_chat_room(conn, &gp.room_name, &_username).unwrap();
-        } else {
-            // deleting the user from group chats
-            let _ = del_participant_from_group_chat_room(
-                conn,
-                &ChatRoomParticipants {
-                    user_id: _user_id,
-                    chat_room_id: gp.chat_room_id,
-                    is_admin: false,
-                },
-                group_owner,
-            )
-            .unwrap();
+    if let Some(gps) = get_user_group_chat_rooms_by_user_id(conn, _user_id) {
+        println!("{:?}", gps);
+        for gp in gps {
+            let group_owner = get_group_owner_by_id(conn, gp.chat_room_id).unwrap();
+            if group_owner == _user_id {
+                // deleting users owned group chats
+                let _ = delete_group_chat_room(conn, &gp.room_name, &_username).unwrap();
+            } else {
+                // deleting the user from group chats
+                let _ = del_participant_from_group_chat_room(
+                    conn,
+                    &ChatRoomParticipants {
+                        user_id: _user_id,
+                        chat_room_id: gp.chat_room_id,
+                        is_admin: false,
+                    },
+                    group_owner,
+                )
+                .unwrap();
+            }
         }
     }
 
@@ -170,11 +176,12 @@ pub fn delete_user(conn: &mut PgConnection, _username: String) -> Result<bool, s
         .load(conn)
         .unwrap();
 
-    let _solana_wallets = tron_wallets
-        .filter(tron_wallets::user_id.eq(_user_id))
-        .select(QTronWallet::as_select())
+    let _solana_wallets = solana_wallets
+        .filter(solana_wallets::user_id.eq(_user_id))
+        .select(QSolanaWallet::as_select())
         .load(conn)
         .unwrap();
+
     if _tron_wallets.len() as u32 == 1 {
         diesel::delete(tron_wallets.filter(tron_wallets::user_id.eq(_user_id)))
             .execute(conn)
@@ -633,6 +640,7 @@ pub fn del_participant_from_group_chat_room(
             ),
         )));
     }
+
     // checking if the user is in the group
     let chat_room_info: Vec<ChatRoomParticipants> = chat_room_participants
         .filter(
@@ -648,7 +656,7 @@ pub fn del_participant_from_group_chat_room(
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             format!(
-                "user id {} is already in the group chat room id {}",
+                "user id {} is not in the group chat room id {}",
                 _removing_user.user_id, _removing_user.chat_room_id
             ),
         )));
@@ -866,7 +874,7 @@ pub fn get_user_group_chat_rooms_by_user_id(
             chat_room_participants
                 .on(chat_room_participants::chat_room_id.eq(chat_rooms::chat_room_id)),
         )
-        .filter(chat_room_participants::user_id.eq(chat_room_participants::user_id))
+        .filter(chat_room_participants::user_id.eq(_user_id))
         .filter(chat_rooms::room_description.ne("private room")) // Add this filter for room name
         .select(QChatRooms::as_select())
         .load(_conn)
