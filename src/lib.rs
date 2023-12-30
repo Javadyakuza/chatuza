@@ -31,7 +31,7 @@ pub fn add_new_user(
     conn: &mut PgConnection,
     user_credits: &Users,
     user_profile: &mut UserProfiles,
-) -> Result<(), Error> {
+) -> Result<QUsers, Error> {
     // inserting user credits
     diesel::insert_into(users::table)
         .values(user_credits)
@@ -55,40 +55,47 @@ pub fn add_new_user(
 
     println!("inserted user id {}", &user_info.user_id);
 
-    Ok(())
+    Ok(user_info)
 }
 
 pub fn update_user_credits(
     conn: &mut PgConnection,
-    user_credits: &QUsers,
-) -> Result<String, String> {
+    old_username: String,
+    new_user_credits: &Users,
+) -> Result<QUsers, Box<dyn std::error::Error>> {
     let user_info: QUsers =
-        get_user_with_user_id(conn, user_credits.user_id).expect("didn't find the user id !");
+        get_user_with_username(conn, old_username.as_str()).expect("didn't find the user name !");
 
     // checking for the password to not be the same as the previous one
-    assert!(user_credits.password != user_info.password);
+    assert!(new_user_credits.password != user_info.password);
 
     // checking for the duplicated username
-    if let Some(_) = get_user_with_username(conn, &user_credits.username) {
-        return Err("username already exists !".to_owned());
+
+    if let Some(_) = get_user_with_username(conn, &new_user_credits.username) {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "username already exists !",
+        )));
     }
 
-    // checking for the duplicated email
-    if let Some(_) = get_user_with_username(conn, &user_credits.email) {
-        return Err("email already exists !".to_owned());
+    if let Some(_) = get_user_with_username(conn, &new_user_credits.email) {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "email already exists !",
+        )));
     }
 
     diesel::update(users.filter(users::user_id.eq(user_info.user_id)))
         .set((
-            username.eq(&user_credits.username),
-            email.eq(&user_credits.email),
-            password.eq(&user_credits.password),
+            username.eq(&new_user_credits.username),
+            email.eq(&new_user_credits.email),
+            password.eq(&new_user_credits.password),
         ))
         .returning(Users::as_returning())
         .get_result(conn)
         .expect("couldn't update user credits");
 
-    Ok(format!("user id {} updated", &user_info.user_id))
+    Ok(get_user_with_username(conn, new_user_credits.username.as_str()).unwrap())
 }
 
 pub fn update_user_profile(

@@ -11,7 +11,6 @@ pub struct NewUserIN {
     pub username_in: String,
     pub email_in: String,
     pub password_in: String,
-    pub user_id_in: i32,
     pub bio_in: Option<String>,
     pub profile_picture_in: Option<String>,
 }

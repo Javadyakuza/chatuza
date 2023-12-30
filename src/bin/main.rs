@@ -98,20 +98,46 @@ fn get_all_user_p2p(user_id: i32) -> Json<Vec<QChatRooms>> {
     let mut conn = establish_connection();
     Json(get_user_group_chat_rooms_by_user_id(&mut conn, user_id).unwrap())
 }
-#[derive(FromForm, Debug, Serialize)]
-struct Book {
-    name: String,
-    pagesize: String,
-    author: String,
+
+#[post("/new-user", data = "<new_user>")]
+fn new_user(new_user: Form<NewUserIN>) -> Json<QUsers> {
+    let mut conn = establish_connection();
+    Json(
+        add_new_user(
+            &mut conn,
+            &Users {
+                username: new_user.username_in.clone(),
+                email: new_user.email_in.clone(),
+                password: new_user.password_in.clone(),
+            },
+            &mut UserProfiles {
+                user_id: 0,
+                bio: new_user.bio_in.clone(),
+                profile_picture: new_user.profile_picture_in.clone(),
+            },
+        )
+        .unwrap(),
+    )
 }
 
-#[post("/add_book", data = "<book_form>")]
-fn add_book(book_form: Form<Book>) -> Json<Book> {
-    // let book: Book = book_form.into_inner();
-    // let mut dummy_db: Vec<Book> = Vec::new();
-    // dummy_db.push(book);
-    format!("Book fucker successfully: {:?}", &book_form);
-    Json(book_form.into_inner())
+fn new_user(new_user: Form<NewUserIN>) -> Json<QUsers> {
+    let mut conn = establish_connection();
+    Json(
+        add_new_user(
+            &mut conn,
+            &Users {
+                username: new_user.username_in.clone(),
+                email: new_user.email_in.clone(),
+                password: new_user.password_in.clone(),
+            },
+            &mut UserProfiles {
+                user_id: 0,
+                bio: new_user.bio_in.clone(),
+                profile_picture: new_user.profile_picture_in.clone(),
+            },
+        )
+        .unwrap(),
+    )
 }
 
 #[catch(404)]
@@ -139,6 +165,8 @@ fn main() {
                 validate_chatroom_user,
                 get_all_user_groups,
                 get_all_user_p2p,
+                // setters
+                new_user
             ],
         )
         // .attach(DbConn::fairing())
