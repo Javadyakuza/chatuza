@@ -115,7 +115,7 @@ pub fn update_user_profile(
         .get_result(conn)
         .expect("couldn't update user profile");
 
-    Ok()
+    Ok(get_user_profile_with_user_id(conn, user_profile.user_id).unwrap())
 }
 
 pub fn delete_user(conn: &mut PgConnection, _user_id: i32) -> Result<String, String> {
