@@ -576,7 +576,18 @@ pub fn delete_group_chat_room(
 pub fn add_participant_to_group_chat_room(
     _conn: &mut PgConnection,
     _adding_user: &ChatRoomParticipants,
+    _adder_username: &String,
 ) -> Result<ChatRoomParticipants, Box<dyn std::error::Error>> {
+    let _adder_user_id = get_user_with_username(_conn, _adder_username)
+        .unwrap()
+        .user_id;
+    if get_group_owner_by_id(_conn, _adding_user.chat_room_id).unwrap() != _adder_user_id {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "only admin can add participants to the group chat at the moment",
+        )));
+    }
+
     if !is_group_chat(_conn, _adding_user.chat_room_id) {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
