@@ -318,7 +318,7 @@ fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
     )
 }
 
-#[post("/add-tron-wallet", data = "<new_wallet_info>")]
+#[post("/add-solana-wallet", data = "<new_wallet_info>")]
 fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QSolanaWallet> {
     let mut conn = establish_connection();
     let _user_id = get_user_with_username(&mut conn, &new_wallet_info.username_in)
@@ -336,12 +336,21 @@ fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QSolanaWallet> 
     )
 }
 #[post("/add-tron-wallet", data = "<new_wallet_info>")]
-fn add_tron_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<bool> {
+fn add_tron_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QTronWallet> {
     let mut conn = establish_connection();
     let _user_id = get_user_with_username(&mut conn, &new_wallet_info.username_in)
         .unwrap()
         .user_id;
-    Json(initialize_new_tron_wallet(&mut conn).unwrap())
+    Json(
+        initialize_new_tron_wallet(
+            &mut conn,
+            &TronWallet {
+                user_id: _user_id,
+                wallet_addr: new_wallet_info.wallet_addr.as_bytes().to_vec(),
+            },
+        )
+        .unwrap(),
+    )
 }
 #[get("/get-tron-addr_by_username/<username>")]
 fn get_tron_addr(username: String) -> Json<String> {
@@ -420,7 +429,9 @@ fn main() {
                 add_user_to_gp,
                 delete_user_from_gp,
                 get_tron_addr,
-                get_solana_addr
+                get_solana_addr,
+                add_solana_wallet,
+                add_tron_wallet
             ],
         )
         // .attach(DbConn::fairing())
