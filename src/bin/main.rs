@@ -12,6 +12,7 @@ use chatuza_db::schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
 use chatuza_db::update_group_chat_room_info;
+use chatuza_db::update_message;
 use chatuza_db::{add_new_group_chat_room, add_new_p2p_chat_room};
 use chatuza_db::{
     add_new_user, delete_user, get_user_with_username, update_user_credits, update_user_profile,
@@ -104,7 +105,7 @@ fn main() {
     // delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
 
     let new_message: Messages = Messages {
-        sender_id: 6,
+        sender_id: 5,
         recipient_id: 4,
         timestamp: std::time::SystemTime::now(),
         content: "hi there is a message from user 5".to_owned(),
@@ -116,5 +117,14 @@ fn main() {
 
     // let add_msg_res = add_new_message(connection, &new_message).unwrap();
 
-    del_message(connection, 1, 5).unwrap();
+    // del_message(connection, 1, 5).unwrap();
+
+    update_message(
+        connection,
+        "new_message_content for the user 4".to_owned(),
+        2,
+        true,
+        5,
+    )
+    .unwrap();
 }

@@ -525,7 +525,7 @@ pub fn del_message(
     assert!(is_valid_message(_conn, _message_id));
 
     // checking the authority of the remover
-    let message_info: Messages = get_message_by_id(_conn, _message_id).unwrap();
+    let message_info: QMessages = get_message_by_id(_conn, _message_id).unwrap();
 
     if (is_group_chat(_conn, message_info.chat_room_id)) {
         // its a group chat
@@ -545,52 +545,48 @@ pub fn del_message(
     Ok(())
 }
 
+// check will be added to this function later
 pub fn update_message(
     _conn: &mut PgConnection,
+    _new_message_content: String,
     _message_id: i32,
-    editor_user_id: i32,
+    _is_read: bool,
+    _editor_id: i32,
 ) -> Result<(), String> {
     // getting the chat room id
     assert!(is_valid_message(_conn, _message_id));
 
-    let message_info: Messages = get_message_by_id(_conn, _message_id).unwrap();
+    let old_message_info: QMessages = get_message_by_id(_conn, _message_id).unwrap();
 
-    // checking if the editor is the admin
-    if editor_user_id != get_group_owner_by_id(_conn, _chat_room_id).unwrap() {
-        return Err(format!(
-            "user id {} is not allowed to edit the group info",
-            editor_user_id
-        ));
-    }
+    // checking if the editor is the sender
+    assert!(old_message_info.sender_id == _editor_id);
 
     // updating the chat room info
-    diesel::update(chat_rooms.filter(chat_rooms::chat_room_id.eq(_chat_room_id)))
-        .set((
-            room_name.eq(&new_chat_room_info.room_name),
-            room_description.eq(&new_chat_room_info.room_description),
-        ))
-        .returning(QChatRooms::as_returning())
+    diesel::update(messages.filter(messages::message_id.eq(old_message_info.message_id)))
+        .set((content.eq(&_new_message_content), is_read.eq(_is_read)))
+        .returning(QMessages::as_returning())
         .get_result(_conn)
-        .expect("couldn't update the chat room info");
+        .expect("couldn't update the message");
 
-    println!("updated the chat room id {} info", _chat_room_id);
+    println!("updated the message id {}", old_message_info.message_id);
 
     Ok(())
 }
 
 // -- ChatRooms/ Message history GETTER functions -- //
 
-pub fn get_message_by_id(_conn: &mut PgConnection, _message_id: i32) -> Option<Messages> {
-    let chat_room_info: Vec<Messages> = messages
+pub fn get_message_by_id(_conn: &mut PgConnection, _message_id: i32) -> Option<QMessages> {
+    let chat_room_info: Vec<QMessages> = messages
         .filter(messages::message_id.eq(_message_id))
-        .select(Messages::as_returning())
+        .select(QMessages::as_returning())
         .load(_conn)
         .unwrap();
 
     if chat_room_info.len() != 1 {
         None
     } else {
-        Some(Messages {
+        Some(QMessages {
+            message_id: chat_room_info[0].message_id,
             sender_id: chat_room_info[0].sender_id,
             recipient_id: chat_room_info[0].recipient_id,
             timestamp: chat_room_info[0].timestamp,
