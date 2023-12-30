@@ -17,7 +17,7 @@ pub struct NewUserIN {
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct UpdatedUserCreditsIN {
-    pub user_id_in: i32,
+    pub username_out: String,
     pub username_in: String,
     pub email_in: String,
     pub password_in: String,
@@ -25,7 +25,6 @@ pub struct UpdatedUserCreditsIN {
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct UpdatedUserProfileIN {
-    pub user_id_in: i32,
     pub bio_in: String,
     pub profile_picture_in: String,
 }

@@ -100,8 +100,12 @@ pub fn update_user_credits(
 
 pub fn update_user_profile(
     conn: &mut PgConnection,
-    user_profile: &UserProfiles,
-) -> Result<String, String> {
+    old_username: String,
+    user_profile: &mut UserProfiles,
+) -> Result<UserProfiles, Box<dyn std::error::Error>> {
+    //fetching the user id and set it accordingly
+    user_profile.user_id = get_user_with_username(conn, &old_username).unwrap().user_id;
+
     diesel::update(user_profiles.filter(user_profiles::user_id.eq(user_profile.user_id)))
         .set((
             bio.eq(&user_profile.bio),
@@ -111,7 +115,7 @@ pub fn update_user_profile(
         .get_result(conn)
         .expect("couldn't update user profile");
 
-    Ok(format!("user id {} updated", &user_profile.user_id))
+    Ok()
 }
 
 pub fn delete_user(conn: &mut PgConnection, _user_id: i32) -> Result<String, String> {
@@ -178,6 +182,28 @@ pub fn get_user_with_user_id(_conn: &mut PgConnection, _user_id: i32) -> Option<
             username: user_row[0].username.clone(),
             email: user_row[0].email.clone(),
             password: user_row[0].password.clone(),
+        })
+    } else {
+        // some thing is wrong
+        None
+    }
+}
+
+pub fn get_user_profile_with_user_id(
+    _conn: &mut PgConnection,
+    _user_id: i32,
+) -> Option<UserProfiles> {
+    let user_row: Vec<UserProfiles> = user_profiles
+        .filter(user_profiles::user_id.eq(&_user_id))
+        .select(UserProfiles::as_select())
+        .load(_conn)
+        .unwrap_or(vec![]);
+
+    if user_row.len() == 1 {
+        Some(UserProfiles {
+            user_id: _user_id,
+            bio: user_row[0].bio.clone(),
+            profile_picture: user_row[0].profile_picture.clone(),
         })
     } else {
         // some thing is wrong

@@ -120,20 +120,17 @@ fn new_user(new_user: Form<NewUserIN>) -> Json<QUsers> {
     )
 }
 
-fn new_user(new_user: Form<NewUserIN>) -> Json<QUsers> {
+#[post("/update-user-credits", data = "<new_credits>")]
+fn update_user_conditionals(new_credits: Form<UpdatedUserCreditsIN>) -> Json<QUsers> {
     let mut conn = establish_connection();
     Json(
-        add_new_user(
+        update_user_credits(
             &mut conn,
+            new_credits.username_out.clone(),
             &Users {
-                username: new_user.username_in.clone(),
-                email: new_user.email_in.clone(),
-                password: new_user.password_in.clone(),
-            },
-            &mut UserProfiles {
-                user_id: 0,
-                bio: new_user.bio_in.clone(),
-                profile_picture: new_user.profile_picture_in.clone(),
+                username: new_credits.username_in.clone(),
+                email: new_credits.email_in.clone(),
+                password: new_credits.password_in.clone(),
             },
         )
         .unwrap(),
@@ -166,7 +163,9 @@ fn main() {
                 get_all_user_groups,
                 get_all_user_p2p,
                 // setters
-                new_user
+                new_user,
+                update_user_conditionals,
+                
             ],
         )
         // .attach(DbConn::fairing())
