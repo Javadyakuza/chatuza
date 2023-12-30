@@ -259,7 +259,7 @@ fn add_user_to_gp(new_participant: Form<NewGroupChatParticipantIN>) -> Json<Chat
     )
 }
 
-#[post("/delete-user-to-gp", data = "<removing_participant>")]
+#[post("/delete-user-from-gp", data = "<removing_participant>")]
 fn delete_user_from_gp(removing_participant: Form<GroupChatParticipantToRemoveIN>) -> Json<bool> {
     let mut conn = establish_connection();
     let _chat_room_id =
@@ -347,7 +347,8 @@ fn main() {
                 new_gp,
                 update_gp,
                 delete_gp,
-                add_user_to_gp
+                add_user_to_gp,
+                delete_user_from_gp
             ],
         )
         // .attach(DbConn::fairing())

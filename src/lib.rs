@@ -406,7 +406,6 @@ pub fn add_new_group_chat_room(
         "added the user id {} to the group chat room id {} as the owner",
         group_owner_id, new_chat_room.chat_room_id
     );
-
     // adding members if any specified
     if group_members.len() > 0 {
         let mut group_members_up: Vec<ChatRoomParticipants> = Vec::new();
@@ -424,12 +423,12 @@ pub fn add_new_group_chat_room(
                     is_admin: false,
                 });
             }
-            let _ = diesel::insert_into(chat_room_participants::table)
-                .values(&group_members_up)
-                .returning(ChatRoomParticipants::as_returning())
-                .get_result(_conn)
-                .unwrap();
         }
+        let _ = diesel::insert_into(chat_room_participants::table)
+            .values(&group_members_up)
+            .returning(ChatRoomParticipants::as_returning())
+            .get_result(_conn)
+            .unwrap();
     }
     Ok(new_chat_room)
 }
@@ -564,7 +563,9 @@ pub fn del_participant_from_group_chat_room(
 
     // checking if the remover is the admin
     // this will also check if the chat room id is a group chat room or not
-    if remover_user_id != get_group_owner_by_id(_conn, _removing_user.chat_room_id).unwrap() {
+    if remover_user_id != get_group_owner_by_id(_conn, _removing_user.chat_room_id).unwrap()
+        && remover_user_id != _removing_user.user_id
+    {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             format!(
