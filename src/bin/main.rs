@@ -206,9 +206,12 @@ fn update_user_profile_api(
 }
 
 #[post("/delete-user", data = "<username>")]
-fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
+fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<Result<bool, String>> {
     let mut conn = establish_connection();
-    Json(delete_user(&mut conn, &username.username_in.clone()).unwrap())
+    match delete_user(&mut conn, &username.username_in.clone()) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/create-p2p", data = "<new_p2p_info>")]
