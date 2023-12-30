@@ -25,6 +25,7 @@ pub struct UpdatedUserCreditsIN {
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct UpdatedUserProfileIN {
+    pub username_in: String,
     pub bio_in: String,
     pub profile_picture_in: String,
 }

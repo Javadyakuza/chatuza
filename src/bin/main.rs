@@ -137,6 +137,23 @@ fn update_user_conditionals(new_credits: Form<UpdatedUserCreditsIN>) -> Json<QUs
     )
 }
 
+#[post("/update-user-profile", data = "<new_profile>")]
+fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<UserProfiles> {
+    let mut conn = establish_connection();
+    Json(
+        update_user_profile(
+            &mut conn,
+            new_profile.username_in.clone(),
+            &mut UserProfiles {
+                user_id: 0,
+                bio: Some(new_profile.bio_in.clone()),
+                profile_picture: Some(new_profile.profile_picture_in.clone()),
+            },
+        )
+        .unwrap(),
+    )
+}
+
 #[catch(404)]
 fn not_found(req: &Request) -> String {
     format!("Oh no the {} path doesn't exists !!", req.uri())
@@ -165,7 +182,7 @@ fn main() {
                 // setters
                 new_user,
                 update_user_conditionals,
-                
+                update_user_profile_api
             ],
         )
         // .attach(DbConn::fairing())
