@@ -36,9 +36,9 @@ fn get_user_via_username(username: String) -> Json<QUsers> {
 }
 
 #[get("/user-profile-via-username/<username>")]
-fn get_user_profile_via_username(username: String) -> Json<UserProfiles> {
+fn get_user_profile_via_username(username: String) -> Json<Result<UserProfiles, String>> {
     let mut conn = establish_connection();
-    Json(get_user_profile_with_username(&mut conn, username).unwrap())
+    Json(get_user_profile_with_username(&mut conn, &username).unwrap_or_else(|| "".to_owned()))
 }
 
 #[get("/user-via-email/<email>")]
