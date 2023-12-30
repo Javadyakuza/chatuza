@@ -40,18 +40,15 @@ pub fn add_new_user(
     user_profile: &mut UserProfiles,
 ) -> Result<QUsers, Box<dyn std::error::Error>> {
     // inserting user credits
-    match diesel::insert_into(users::table)
+    if let Err(e) = diesel::insert_into(users::table)
         .values(user_credits)
         .returning(Users::as_returning())
         .get_result(conn)
     {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("{:?}", e),
-            )))
-        }
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{:?}", e),
+        )));
     }
 
     // fetching the user info
@@ -214,14 +211,13 @@ pub fn delete_user(
         }
     }
 
-    match diesel::delete(user_profiles.filter(user_profiles::user_id.eq(_user_id))).execute(conn) {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("{:?}", e),
-            )))
-        }
+    if let Err(e) =
+        diesel::delete(user_profiles.filter(user_profiles::user_id.eq(_user_id))).execute(conn)
+    {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{:?}", e),
+        )));
     }
     // checking if the user has any wallets created and deleting them
     let _tron_wallets = tron_wallets
@@ -431,7 +427,7 @@ pub fn add_new_p2p_chat_room(
             }
         }
         // adding requester to the participants table
-        match diesel::insert_into(chat_room_participants)
+        if let Err(e) = diesel::insert_into(chat_room_participants)
             .values(ChatRoomParticipants {
                 chat_room_id: new_chat_room.chat_room_id,
                 user_id: requestor_user,
@@ -440,13 +436,10 @@ pub fn add_new_p2p_chat_room(
             .returning(ChatRoomParticipants::as_returning())
             .get_result(_conn)
         {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("{:?}", e),
-                )))
-            }
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )));
         }
         // adding requester to the acceptor table
         match diesel::insert_into(chat_room_participants)
@@ -527,18 +520,15 @@ pub fn delete_p2p_chat_room(
     }
     // deleting the users from the participants table
     for participant in participants.iter() {
-        match diesel::delete(
+        if let Err(e) = diesel::delete(
             chat_room_participants.filter(chat_room_participants::user_id.eq(participant.user_id)),
         )
         .execute(_conn)
         {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("{:?}", e),
-                )))
-            }
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )));
         }
     }
 
@@ -594,18 +584,15 @@ pub fn add_new_group_chat_room(
         chat_room_id: new_chat_room.chat_room_id,
         is_admin: true,
     };
-    match diesel::insert_into(chat_room_participants)
+    if let Err(e) = diesel::insert_into(chat_room_participants)
         .values(&owner)
         .returning(ChatRoomParticipants::as_returning())
         .get_result(_conn)
     {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("{:?}", e),
-            )))
-        }
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{:?}", e),
+        )));
     }
     // adding members if any specified
     if group_members.len() > 0 {
@@ -629,18 +616,15 @@ pub fn add_new_group_chat_room(
                 });
             }
         }
-        match diesel::insert_into(chat_room_participants::table)
+        if let Err(e) = diesel::insert_into(chat_room_participants::table)
             .values(&group_members_up)
             .returning(ChatRoomParticipants::as_returning())
             .get_result(_conn)
         {
-            Ok(_) => {}
-            Err(e) => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("{:?}", e),
-                )))
-            }
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )));
         }
     }
     Ok(new_chat_room)
@@ -760,18 +744,15 @@ pub fn delete_group_chat_room(
     }
 
     // deleting the members associated to the chat room group
-    match diesel::delete(
+    if let Err(e) = diesel::delete(
         chat_room_participants.filter(chat_room_participants::chat_room_id.eq(_chat_room_id)),
     )
     .execute(_conn)
     {
-        Ok(_) => {}
-        Err(e) => {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("{:?}", e),
-            )))
-        }
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{:?}", e),
+        )));
     }
     // deleting the room from the chat rooms table
     match diesel::delete(chat_rooms.filter(chat_rooms::chat_room_id.eq(_chat_room_id)))
