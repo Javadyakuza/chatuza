@@ -6,6 +6,7 @@ use chatuza_db::delete_group_chat_room;
 use chatuza_db::delete_private_chat_room;
 use chatuza_db::diesel::prelude::*;
 use chatuza_db::establish_connection;
+use chatuza_db::get_p2p_chat_history;
 use chatuza_db::models::*;
 use chatuza_db::schema::messages::timestamp;
 use chatuza_db::schema::{
@@ -105,26 +106,32 @@ fn main() {
     // delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
 
     let new_message: Messages = Messages {
-        sender_id: 5,
-        recipient_id: 4,
+        sender_id: 4,
+        recipient_id: 5,
         timestamp: std::time::SystemTime::now(),
-        content: "hi there is a message from user 5".to_owned(),
+        content: "hi its another message".to_owned(),
         is_read: false,
         delivery_status: "sent".to_owned(),
         chat_room_id: 8,
-        parent_message_id: None,
+        parent_message_id: Some(2),
     };
 
-    // let add_msg_res = add_new_message(connection, &new_message).unwrap();
+    let add_msg_res = add_new_message(connection, &new_message).unwrap();
 
     // del_message(connection, 1, 5).unwrap();
 
-    update_message(
-        connection,
-        "new_message_content for the user 4".to_owned(),
-        2,
-        true,
-        5,
-    )
-    .unwrap();
+    // update_message(
+    //     connection,
+    //     "new_message_content for the user 4".to_owned(),
+    //     2,
+    //     true,
+    //     5,
+    // )
+    // .unwrap();
+
+    let messages = get_p2p_chat_history(connection, 8, 4);
+
+    for message in messages.iter() {
+        println!("{:?}", message);
+    }
 }

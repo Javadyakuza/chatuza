@@ -599,13 +599,25 @@ pub fn get_message_by_id(_conn: &mut PgConnection, _message_id: i32) -> Option<Q
     }
 }
 
-pub fn get_p2p_chat_history() {}
+pub fn get_p2p_chat_history(
+    _conn: &mut PgConnection,
+    _chat_room_id: i32,
+    _requestor_id: i32,
+) -> Vec<QMessages> {
+    // checking the authority of the requestor
+    assert!(is_user_in_chat_room(_conn, _chat_room_id, _requestor_id));
+
+    // choking the existence of the chat room
+    assert!(is_valid_chatroom(_conn, _chat_room_id));
+
+    messages
+        .filter(messages::chat_room_id.eq(_chat_room_id))
+        .select(QMessages::as_select())
+        .load(_conn)
+        .unwrap()
+}
 
 pub fn get_group_chat_history() {}
-
-pub fn get_user_group_chat_room_ids() {}
-
-pub fn get_user_p2p_chat_room_ids() {}
 
 pub fn get_chat_room_participants_by_id(
     _conn: &mut PgConnection,
