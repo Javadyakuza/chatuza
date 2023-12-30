@@ -36,6 +36,15 @@ pub struct ChatRooms {
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
+#[diesel(table_name = crate::schema::chat_rooms)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct UpdatableChatRooms {
+    // pub chat_room_id: i32,
+    pub room_name: String,
+    pub room_description: String,
+}
+
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_room_participants)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChatRoomParticipants {

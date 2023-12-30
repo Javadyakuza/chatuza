@@ -75,7 +75,7 @@ pub struct UpdatedGroupChatRoomInfoIN {
     pub old_chat_room_name_in: String,
     pub room_name_in: String,
     pub room_description_in: String,
-    pub editor_user_id_in: i32,
+    pub editor_username_in: String,
 }
 
 #[derive(FromForm, Debug, Serialize)]

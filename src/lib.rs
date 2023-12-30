@@ -7,7 +7,7 @@ pub mod wallet_lib;
 use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
 use crate::schema::{chat_room_participants, chat_rooms, user_profiles, users};
 use chrono::Local;
-use db_models::QChatRooms;
+use db_models::{QChatRooms, UpdatableChatRooms};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
@@ -431,9 +431,9 @@ pub fn add_new_group_chat_room(
 pub fn update_group_chat_room_info(
     _conn: &mut PgConnection,
     old_chat_room_name: &String,
-    new_chat_room_info: &ChatRooms,
+    new_chat_room_info: &UpdatableChatRooms,
     editor_username: &String,
-) -> Result<(), String> {
+) -> Result<QChatRooms, String> {
     // getting the chat room id
     let _chat_room_id = get_group_chat_by_name(_conn, old_chat_room_name)
         .expect("couldn't find the group chat room")
@@ -462,7 +462,7 @@ pub fn update_group_chat_room_info(
 
     println!("updated the chat room id {} info", _chat_room_id);
 
-    Ok(())
+    Ok(get_group_chat_by_name(_conn, &new_chat_room_info.room_name).unwrap())
 }
 
 pub fn delete_group_chat_room(
