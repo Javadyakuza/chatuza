@@ -1,3 +1,4 @@
+use chatuza_db::add_participant_to_group_chat_room;
 use chatuza_db::delete_group_chat_room;
 use chatuza_db::delete_private_chat_room;
 use chatuza_db::diesel::prelude::*;
@@ -53,7 +54,7 @@ fn main() {
         user_id: 2,
         is_admin: false,
     };
-    let mut chat_room_num_1_u_2 = ChatRoomParticipants {
+    let mut chat_room_num_1_u_3 = ChatRoomParticipants {
         chat_room_id: 0,
         user_id: 5,
         is_admin: false,
@@ -70,20 +71,28 @@ fn main() {
     // .unwrap();
 
     // delete_private_chat_room(connection, 2, 4).unwrap();
-    let new_chat_room_info = ChatRooms {
+    let chat_room_info = ChatRooms {
         room_name: "silver finders".to_owned(),
         room_description: " a group of dudes searching for gold falls !!".to_owned(),
     };
 
-    // add_new_group_chat_room(
+    // let new_chat_room_id = add_new_group_chat_room(
     //     connection,
     //     &chat_room_info,
     //     5,
-    //     vec![&mut chat_room_num_1_u_1, &mut chat_room_num_1_u_2],
+    //     vec![&mut chat_room_num_1_u_1],
     // )
+    // .unwrap();
+
+    let mut chat_room_num_1_u_2: ChatRoomParticipants = ChatRoomParticipants {
+        chat_room_id: 6,
+        user_id: 2,
+        is_admin: false,
+    };
     // .unwrap();
     // let res = update_group_chat_room_info(connection, &"miners".to_owned(), &new_chat_room_info, 5);
     // println!("{:?}", res);
 
-    delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
+    add_participant_to_group_chat_room(connection, &chat_room_num_1_u_2).unwrap();
+    // delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
 }

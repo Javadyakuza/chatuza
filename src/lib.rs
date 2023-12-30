@@ -287,7 +287,7 @@ pub fn add_new_group_chat_room(
     _chat_room_info: &ChatRooms,
     group_owner_id: i32,
     group_members: Vec<&mut ChatRoomParticipants>,
-) -> Result<(), String> {
+) -> Result<i32, String> {
     // checking the owner existence
     if let None = get_user_with_user_id(_conn, group_owner_id) {
         return Err(format!("user id {} doesnt exits", group_owner_id));
@@ -331,14 +331,14 @@ pub fn add_new_group_chat_room(
                 is_admin: false,
             })
             .collect();
-        let _ = diesel::insert_into(chat_room_participants)
+        let _ = diesel::insert_into(chat_room_participants::table)
             .values(&group_members)
             .returning(ChatRoomParticipants::as_returning())
             .get_result(_conn)
             .unwrap();
     }
 
-    Ok(())
+    Ok(new_chat_room_id)
 }
 
 pub fn update_group_chat_room_info(
@@ -408,12 +408,11 @@ pub fn delete_group_chat_room(
 
 pub fn add_participant_to_group_chat_room(
     _conn: &mut PgConnection,
-    _chat_room_id: i32,
-    _adding_user_id: i32,
+    _adding_user: &ChatRoomParticipants,
 ) -> Result<(), String> {
     // checking the chat room is a group chat and not a private chat
     let chat_room_info: Vec<ChatRooms> = chat_rooms
-        .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
+        .filter(chat_rooms::chat_room_id.eq(_adding_user.chat_room_id))
         .select(ChatRooms::as_returning())
         .load(_conn)
         .unwrap();
@@ -428,14 +427,27 @@ pub fn add_participant_to_group_chat_room(
     let chat_room_info: Vec<ChatRoomParticipants> = chat_room_participants
         .filter(
             chat_room_participants::chat_room_id
-                .eq(_chat_room_id)
-                .and(chat_room_participants::user_id.eq(_adding_user_id)),
+                .eq(_adding_user.chat_room_id)
+                .and(chat_room_participants::user_id.eq(_adding_user.user_id)),
         )
         .select(ChatRoomParticipants::as_returning())
         .load(_conn)
         .unwrap();
 
-    // checking if the user is the admin
+    if chat_room_info.len() != 0 {
+        return Err(format!(
+            "user id {} is already in the group chat room id {}",
+            _adding_user.user_id, _adding_user.chat_room_id
+        ));
+    }
+
+    // inserting the user to the participants table
+    diesel::insert_into(chat_room_participants::table)
+        .values(_adding_user)
+        .returning(ChatRoomParticipants::as_returning())
+        .get_result(_conn)
+        .expect("couldn't insert user to the group");
+
     Ok(())
 }
 
