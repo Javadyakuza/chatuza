@@ -4,3 +4,4 @@ CREATE TABLE solana_wallets (
   pub_key BYTEA NOT NULL,
   wallet_addr BYTEA NOT NULL
 );
+0xF1B7B971Da6715ecDF24F0c38352618a059309d7

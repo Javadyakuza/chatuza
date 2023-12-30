@@ -1,16 +1,17 @@
 #![recursion_limit = "256"]
+pub mod api_models;
 pub mod db_models;
 pub mod schema;
 pub mod wallet_lib;
 
 use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
 use crate::schema::{chat_room_participants, chat_rooms, user_profiles, users};
+use db_models::QChatRooms;
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
-use db_models::QChatRooms;
 use schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
