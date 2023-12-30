@@ -67,10 +67,10 @@ fn get_group_owner_via_id(owner_id: i32) -> Json<i32> {
     Json(get_group_owner_by_id(&mut conn, owner_id).unwrap())
 }
 
-#[get("/group_id_by_name/<chatroom_name>")]
-fn get_chatroom_id_via_name(chatroom_name: String) -> Json<i32> {
+#[get("/group_by_name/<chatroom_name>")]
+fn get_chatroom_id_via_name(chatroom_name: String) -> Json<QChatRooms> {
     let mut conn = establish_connection();
-    Json(get_group_chat_id_by_name(&mut conn, &chatroom_name).unwrap())
+    Json(get_group_chat_by_name(&mut conn, &chatroom_name).unwrap())
 }
 
 #[get("/is_valid_gp/<chatroom_id>")]
@@ -162,6 +162,23 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
     )
 }
 
+// #[post("/create-p2p", data = "<new_profile>")]
+// fn new_p2p(new_profile: Form<NewP2PChatRoomIN>) -> Json<UserProfiles> {
+//     let mut conn = establish_connection();
+//     Json(
+//         update_user_profile(
+//             &mut conn,
+//             new_profile.username_in.clone(),
+//             &mut UserProfiles {
+//                 user_id: 0,
+//                 bio: Some(new_profile.bio_in.clone()),
+//                 profile_picture: Some(new_profile.profile_picture_in.clone()),
+//             },
+//         )
+//         .unwrap(),
+//     )
+// }
+
 #[post("/delete-user", data = "<username>")]
 fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
     let mut conn = establish_connection();
@@ -197,7 +214,8 @@ fn main() {
                 // setters
                 new_user,
                 update_user_conditionals,
-                update_user_profile_api
+                update_user_profile_api,
+                delete_user_via_username
             ],
         )
         // .attach(DbConn::fairing())

@@ -6,6 +6,7 @@ pub mod wallet_lib;
 
 use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
 use crate::schema::{chat_room_participants, chat_rooms, user_profiles, users};
+use chrono::Local;
 use db_models::QChatRooms;
 pub use diesel;
 pub use diesel::pg::PgConnection;
@@ -15,7 +16,9 @@ pub use dotenvy::dotenv;
 use schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
+
 pub use std::env;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub fn establish_connection() -> PgConnection {
     // loading the env vars into the current scope
@@ -259,8 +262,16 @@ pub fn add_new_p2p_chat_room(
 
     if shared_room_res.len() == 0 {
         // updating the chat rooms db
+        let mut hasher = DefaultHasher::new();
+        Local::now()
+            .offset()
+            .to_string()
+            .push_str("Private Room")
+            .hash(&mut hasher);
+        let chat_room_name_hashed = hasher.finish().to_string();
+
         let values_of_chat_rooms = ChatRooms {
-            room_name: "private room".to_owned(),
+            room_name: chat_room_name_hashed,
             room_description: "private room".to_owned(),
         };
 
@@ -408,8 +419,9 @@ pub fn update_group_chat_room_info(
     editor_user_id: i32,
 ) -> Result<(), String> {
     // getting the chat room id
-    let _chat_room_id = get_group_chat_id_by_name(_conn, old_chat_room_name)
-        .expect("couldn't find the group chat room");
+    let _chat_room_id = get_group_chat_by_name(_conn, old_chat_room_name)
+        .expect("couldn't find the group chat room")
+        .chat_room_id;
 
     // checking if the editor is the admin
     if editor_user_id != get_group_owner_by_id(_conn, _chat_room_id).unwrap() {
@@ -440,8 +452,9 @@ pub fn delete_group_chat_room(
     remover_user_id: i32,
 ) -> Result<(), String> {
     // getting the chat room id
-    let _chat_room_id = get_group_chat_id_by_name(_conn, _chat_room_name)
-        .expect("couldn't find the group chat room");
+    let _chat_room_id = get_group_chat_by_name(_conn, _chat_room_name)
+        .expect("couldn't find the group chat room")
+        .chat_room_id;
 
     // checking if the remover is the admin
     // this will also check if the chat room id is a group chat room or not
@@ -615,23 +628,44 @@ pub fn get_group_owner_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Op
     }
 }
 
-pub fn get_group_chat_id_by_name(
+pub fn get_group_chat_by_name(
     _conn: &mut PgConnection,
     _chat_room_name: &String,
-) -> Option<i32> {
-    let _chat_room_id: Vec<QChatRooms> = chat_rooms
+) -> Option<QChatRooms> {
+    let _chat_rooms: Vec<QChatRooms> = chat_rooms
         .filter(chat_rooms::room_name.eq(_chat_room_name))
         .select(QChatRooms::as_returning())
         .load(_conn)
         .unwrap();
 
-    if _chat_room_id.len() != 1 {
+    if _chat_rooms.len() != 1 {
         return None;
     } else {
-        return Some(_chat_room_id[0].chat_room_id);
+        return Some(QChatRooms {
+            chat_room_id: _chat_rooms[0].chat_room_id,
+            room_name: _chat_rooms[0].room_name.clone(),
+            room_description: _chat_rooms[0].room_description.clone(),
+        });
     }
 }
 
+pub fn get_group_chat_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Option<QChatRooms> {
+    let _chat_rooms: Vec<QChatRooms> = chat_rooms
+        .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
+        .select(QChatRooms::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if _chat_rooms.len() != 1 {
+        return None;
+    } else {
+        return Some(QChatRooms {
+            chat_room_id: _chat_rooms[0].chat_room_id,
+            room_name: _chat_rooms[0].room_name.clone(),
+            room_description: _chat_rooms[0].room_description.clone(),
+        });
+    }
+}
 pub fn is_group_chat(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
     let chat_room_info: Vec<ChatRooms> = chat_rooms
         .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
@@ -641,7 +675,7 @@ pub fn is_group_chat(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
 
     if chat_room_info.len() != 1 {
         false
-    } else if chat_room_info[0].room_name == "private room" {
+    } else if chat_room_info[0].room_description == "private room" {
         false
     } else {
         true
@@ -704,7 +738,7 @@ pub fn get_user_p2p_chat_rooms_by_user_id(
                 .on(chat_room_participants::chat_room_id.eq(chat_rooms::chat_room_id)),
         )
         .filter(chat_room_participants::user_id.eq(chat_room_participants::user_id))
-        .filter(chat_rooms::room_name.eq("private room")) // Add this filter for room name
+        .filter(chat_rooms::room_description.eq("private room")) // Add this filter for room name
         .select(QChatRooms::as_select())
         .load(_conn)
         .unwrap();
@@ -727,7 +761,7 @@ pub fn get_user_group_chat_rooms_by_user_id(
                 .on(chat_room_participants::chat_room_id.eq(chat_rooms::chat_room_id)),
         )
         .filter(chat_room_participants::user_id.eq(chat_room_participants::user_id))
-        .filter(chat_rooms::room_name.ne("private room")) // Add this filter for room name
+        .filter(chat_rooms::room_description.ne("private room")) // Add this filter for room name
         .select(QChatRooms::as_select())
         .load(_conn)
         .unwrap();
@@ -738,4 +772,29 @@ pub fn get_user_group_chat_rooms_by_user_id(
     } else {
         Some(_chat_rooms)
     }
+}
+
+pub fn get_two_users_p2p_chat_room(
+    _conn: &mut PgConnection,
+    _user_id_1: i32,
+    _user_id_2: i32,
+) -> Option<QChatRooms> {
+    assert!(get_user_with_user_id(_conn, _user_id_1).is_some());
+    assert!(get_user_with_user_id(_conn, _user_id_2).is_some());
+    let _chat_room_id;
+    {
+        _chat_room_id = chat_room_participants
+            .filter(
+                chat_room_participants::user_id
+                    .eq(_user_id_1)
+                    .or(chat_room_participants::user_id.eq(_user_id_2)),
+            )
+            .group_by(chat_room_participants::chat_room_id)
+            .having(diesel::dsl::count(chat_room_participants::user_id).le(2))
+            .select(diesel::dsl::min(chat_room_participants::chat_room_id))
+            .load::<Option<i32>>(_conn)
+            .unwrap()[0]
+            .unwrap();
+    }
+    Some(get_group_chat_by_id(_conn, _chat_room_id).unwrap())
 }
