@@ -6,7 +6,6 @@ diesel::table! {
         chat_room_id -> Int4,
         user_id -> Int4,
         is_admin -> Bool,
-        room_pub_key -> Bytea,
     }
 }
 
@@ -17,6 +16,7 @@ diesel::table! {
         room_name -> Varchar,
         #[max_length = 255]
         room_description -> Varchar,
+        chat_room_pubkey -> Bytea,
     }
 }
 

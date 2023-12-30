@@ -181,11 +181,13 @@ fn new_p2p(new_profile: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
                 chat_room_id: 0,
                 user_id: req_user.user_id,
                 is_admin: false,
+                room_pub_key: new_profile.chat_room_pubkey,
             },
             &mut ChatRoomParticipants {
                 chat_room_id: 0,
                 user_id: acc_user.user_id,
                 is_admin: false,
+                room_pub_key: new_profile.chat_room_pubkey,
             },
         )
         .unwrap(),

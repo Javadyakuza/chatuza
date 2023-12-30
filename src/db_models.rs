@@ -42,6 +42,7 @@ pub struct ChatRoomParticipants {
     pub chat_room_id: i32,
     pub user_id: i32,
     pub is_admin: bool,
+    pub room_pub_key: Vec<u8>,
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
