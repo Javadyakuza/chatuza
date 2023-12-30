@@ -215,41 +215,48 @@ fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<Result<b
 }
 
 #[post("/create-p2p", data = "<new_p2p_info>")]
-fn new_p2p(new_p2p_info: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
+fn new_p2p(new_p2p_info: Form<NewP2PChatRoomIN>) -> Json<Result<QChatRooms, String>> {
     let mut conn = establish_connection();
-    let req_user = get_user_with_username(
+    let req_user: QUsers;
+    match get_user_with_username(
         &mut conn,
         new_p2p_info.requestor_username_in.clone().as_str(),
-    )
-    .unwrap();
-    let acc_user = get_user_with_username(
+    ) {
+        Ok(res) => req_user = res,
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
+
+    let acc_user: QUsers;
+    match get_user_with_username(
         &mut conn,
         new_p2p_info.acceptor_username_in.clone().as_str(),
-    )
-    .unwrap();
+    ) {
+        Ok(res) => acc_user = res,
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 
-    Json(
-        add_new_p2p_chat_room(
-            &mut conn,
-            req_user.user_id,
-            acc_user.user_id,
-            new_p2p_info.chat_room_pubkey_in.clone(),
-        )
-        .unwrap(),
-    )
+    match add_new_p2p_chat_room(
+        &mut conn,
+        req_user.user_id,
+        acc_user.user_id,
+        new_p2p_info.chat_room_pubkey_in.clone(),
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/delete-p2p", data = "<new_gp_info>")]
-fn delete_p2p(new_gp_info: Form<DeleteP2PChatRoomIN>) -> Json<bool> {
+fn delete_p2p(new_gp_info: Form<DeleteP2PChatRoomIN>) -> Json<Result<bool, String>> {
     let mut conn = establish_connection();
-    Json(
-        delete_p2p_chat_room(
-            &mut conn,
-            &new_gp_info.remover_username_in.clone(),
-            &new_gp_info.contact_username_in.clone(),
-        )
-        .unwrap(),
-    )
+    match delete_p2p_chat_room(
+        &mut conn,
+        &new_gp_info.remover_username_in.clone(),
+        &new_gp_info.contact_username_in.clone(),
+    ) {
+        Ok(res) => return Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{:?}", e))),
+    }
 }
 
 #[post("/create-gp", data = "<new_gp_info>")]

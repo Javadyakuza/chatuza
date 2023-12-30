@@ -363,19 +363,8 @@ pub fn add_new_p2p_chat_room(
     _chat_room_pubkey: String,
 ) -> Result<QChatRooms, Box<dyn std::error::Error>> {
     // checking if the two users are having an existing chat room, there may be some group chats, we check that too.
-    let shared_room_res: Vec<_> = chat_room_participants
-        .filter(
-            chat_room_participants::user_id
-                .eq(requestor_user)
-                .or(chat_room_participants::user_id.eq(acceptor_user)),
-        )
-        .group_by(chat_room_participants::chat_room_id)
-        .having(diesel::dsl::count(chat_room_participants::user_id).le(2))
-        .select(diesel::dsl::min(chat_room_participants::chat_room_id))
-        .load::<Option<i32>>(_conn)
-        .unwrap();
 
-    if shared_room_res.len() == 0 {
+    if let Err(_) = get_two_users_p2p_chat_room(_conn, requestor_user, acceptor_user) {
         // updating the chat rooms db
         // hashing the chatroom name because it doesn't have a name and it must be using the now time and the literal of the private room
         let mut hasher = DefaultHasher::new();
@@ -418,10 +407,7 @@ pub fn add_new_p2p_chat_room(
             .returning(ChatRoomParticipants::as_returning())
             .get_result(_conn)
             .expect("couldn't insert user credits");
-        println!(
-            "new private chat room id {} \n user one id  {} \n user two id {} ",
-            new_chat_room.chat_room_id, requestor_user, acceptor_user
-        );
+
         Ok(new_chat_room)
     } else {
         Err(Box::new(std::io::Error::new(
@@ -439,21 +425,49 @@ pub fn delete_p2p_chat_room(
     remover_username: &String,
     contact_username: &String,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let _remover_id = get_user_with_username(_conn, remover_username)
-        .unwrap()
-        .user_id;
-    let _contact_id = get_user_with_username(_conn, contact_username)
-        .unwrap()
-        .user_id;
+    let _remover_id;
+    match get_user_with_username(_conn, remover_username) {
+        Ok(res) => _remover_id = res.user_id,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
+    let _contact_id;
+    match get_user_with_username(_conn, contact_username) {
+        Ok(res) => _contact_id = res.user_id,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
 
-    let _chat_room_id = get_two_users_p2p_chat_room(_conn, _remover_id, _contact_id)
-        .unwrap()
-        .chat_room_id;
+    let _chat_room_id;
+    match get_two_users_p2p_chat_room(_conn, _remover_id, _contact_id) {
+        Ok(res) => _chat_room_id = res.chat_room_id,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
 
     // checking the authority of the remover
-    let participants = get_chat_room_participants_by_id(_conn, _chat_room_id)
-        .expect(format!("no chat rooms with id {} found !", _chat_room_id).as_str());
-
+    let participants;
+    match get_chat_room_participants_by_id(_conn, _chat_room_id) {
+        Ok(res) => participants = res,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{:?}", e),
+            )))
+        }
+    }
     // deleting the users from the participants table
     for participant in participants.iter() {
         diesel::delete(
@@ -844,7 +858,10 @@ pub fn get_group_chat_by_name(
     }
 }
 
-pub fn get_group_chat_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Option<QChatRooms> {
+pub fn get_group_chat_by_id(
+    _conn: &mut PgConnection,
+    _chat_room_id: i32,
+) -> Result<QChatRooms, Box<dyn std::error::Error>> {
     let _chat_rooms: Vec<QChatRooms> = chat_rooms
         .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
         .select(QChatRooms::as_returning())
@@ -852,9 +869,12 @@ pub fn get_group_chat_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Opt
         .unwrap_or(vec![]);
 
     if _chat_rooms.len() != 1 {
-        return None;
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("chat room id {} not found !", _chat_room_id),
+        )))
     } else {
-        return Some(QChatRooms {
+        return Ok(QChatRooms {
             chat_room_id: _chat_rooms[0].chat_room_id,
             room_name: _chat_rooms[0].room_name.clone(),
             room_description: _chat_rooms[0].room_description.clone(),
@@ -980,29 +1000,48 @@ pub fn get_two_users_p2p_chat_room(
     _conn: &mut PgConnection,
     _user_id_1: i32,
     _user_id_2: i32,
-) -> Option<QChatRooms> {
-    assert!(
-        get_user_with_user_id(_conn, _user_id_1).is_ok(),
-        "first user id doesn't exist's"
-    );
-    assert!(
-        get_user_with_user_id(_conn, _user_id_2).is_ok(),
-        "second user id doesn't exist's"
-    );
-    let _chat_room_id;
+) -> Result<QChatRooms, Box<dyn std::error::Error>> {
+    if !get_user_with_user_id(_conn, _user_id_1).is_ok() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("user id  {} doesn't exist's", _user_id_1),
+        )));
+    }
+    if !get_user_with_user_id(_conn, _user_id_2).is_ok() {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("user id  {} doesn't exist's", _user_id_2),
+        )));
+    }
+
+    let _chat_room_participants: Vec<ChatRoomParticipants>;
     {
-        _chat_room_id = chat_room_participants
+        _chat_room_participants = chat_room_participants
             .filter(
                 chat_room_participants::user_id
                     .eq(_user_id_1)
                     .or(chat_room_participants::user_id.eq(_user_id_2)),
             )
             .group_by(chat_room_participants::chat_room_id)
-            .having(diesel::dsl::count(chat_room_participants::user_id).le(2))
-            .select(diesel::dsl::min(chat_room_participants::chat_room_id))
-            .load::<Option<i32>>(_conn)
-            .expect("two users are not having any chat room !")[0]
-            .expect("couldn't load the chat room id chat room !");
+            .having(diesel::dsl::count(chat_room_participants::user_id).eq(2))
+            .select(ChatRoomParticipants::as_select())
+            .load(_conn)
+            .unwrap_or(vec![]);
     }
-    Some(get_group_chat_by_id(_conn, _chat_room_id).unwrap())
+    if _chat_room_participants.len() != 1 {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!(
+                "user id  {} and user id {} are not charing any p2p chat rooms !",
+                _user_id_1, _user_id_2
+            ),
+        )));
+    }
+    match get_group_chat_by_id(_conn, _chat_room_participants[0].chat_room_id) {
+        Ok(res) => Ok(res),
+        Err(e) => Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{}", e),
+        ))),
+    }
 }
