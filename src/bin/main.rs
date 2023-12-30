@@ -1,19 +1,19 @@
-use chatuza_db::add_new_message;
+// use chatuza_db::add_new_message;
 use chatuza_db::add_participant_to_group_chat_room;
-use chatuza_db::del_message;
+// use chatuza_db::del_message;
 use chatuza_db::del_participant_to_group_chat_room;
 use chatuza_db::delete_group_chat_room;
 use chatuza_db::delete_private_chat_room;
 use chatuza_db::diesel::prelude::*;
 use chatuza_db::establish_connection;
-use chatuza_db::get_chat_room_history;
+// use chatuza_db::get_chat_room_history;
 use chatuza_db::models::*;
-use chatuza_db::schema::messages::timestamp;
+// use chatuza_db::schema::messages::timestamp;
 use chatuza_db::schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
 use chatuza_db::update_group_chat_room_info;
-use chatuza_db::update_message;
+// use chatuza_db::update_message;
 use chatuza_db::wallet_lib::*;
 use chatuza_db::{add_new_group_chat_room, add_new_p2p_chat_room};
 use chatuza_db::{
@@ -106,18 +106,18 @@ fn main() {
     // del_participant_to_group_chat_room(connection, &chat_room_num_1_u_2, 5).unwrap();
     // delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
 
-    let new_message: Messages = Messages {
-        sender_id: 4,
-        recipient_id: 5,
-        timestamp: std::time::SystemTime::now(),
-        content: "hi its another message".to_owned(),
-        is_read: false,
-        delivery_status: "sent".to_owned(),
-        chat_room_id: 8,
-        parent_message_id: Some(2),
-    };
+    // let new_message: Messages = Messages {
+    //     sender_id: 4,
+    //     recipient_id: 5,
+    //     timestamp: std::time::SystemTime::now(),
+    //     content: "hi its another message".to_owned(),
+    //     is_read: false,
+    //     delivery_status: "sent".to_owned(),
+    //     chat_room_id: 8,
+    //     parent_message_id: Some(2),
+    // };
 
-    let add_msg_res = add_new_message(connection, &new_message).unwrap();
+    // let add_msg_res = add_new_message(connection, &new_message).unwrap();
 
     // del_message(connection, 1, 5).unwrap();
 
@@ -130,9 +130,9 @@ fn main() {
     // )
     // .unwrap();
 
-    let messages = get_chat_room_history(connection, 8, 4);
+    // let messages = get_chat_room_history(connection, 8, 4);
 
-    for message in messages.iter() {
-        println!("{:?}", message);
-    }
+    // for message in messages.iter() {
+    //     println!("{:?}", message);
+    // }
 }

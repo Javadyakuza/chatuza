@@ -63,8 +63,6 @@ diesel::table! {
 
 diesel::joinable!(chat_room_participants -> chat_rooms (chat_room_id));
 diesel::joinable!(chat_room_participants -> users (user_id));
-diesel::joinable!(solana_wallets -> users (user_id));
-diesel::joinable!(tron_wallets -> users (user_id));
 diesel::joinable!(user_profiles -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(

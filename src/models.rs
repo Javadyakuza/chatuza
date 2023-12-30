@@ -1,6 +1,4 @@
-use std::time::SystemTime;
-
-use diesel::prelude::*;
+use diesel::{prelude::*, sql_types::Bytea};
 // use merge_derivable;
 use struct_iterable::Iterable;
 
@@ -44,6 +42,27 @@ pub struct ChatRoomParticipants {
     pub user_id: i32,
     pub is_admin: bool,
 }
+
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[diesel(table_name = crate::schema::solana_wallets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct SolanaWallet {
+    // pub wallet_id: i32,
+    pub user_id: i32,
+    pub pub_key: Vec<u8>,
+    pub wallet_addr: Vec<u8>,
+}
+
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[diesel(table_name = crate::schema::tron_wallets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct TronWallet {
+    // pub wallet_id: i32,
+    pub user_id: i32,
+    pub pub_key: Vec<u8>,
+    pub wallet_addr: Vec<u8>,
+}
+
 // --  models with queryable primary keys -- //
 
 #[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
@@ -93,3 +112,23 @@ allow_group_by!(
     chat_room_participants::user_id,
     chat_room_participants::is_admin
 );
+
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[diesel(table_name = crate::schema::solana_wallets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct QSolanaWallet {
+    pub wallet_id: i32,
+    pub user_id: i32,
+    pub pub_key: Vec<u8>,
+    pub wallet_addr: Vec<u8>,
+}
+
+#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[diesel(table_name = crate::schema::tron_wallets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct QTronWallet {
+    pub wallet_id: i32,
+    pub user_id: i32,
+    pub pub_key: Vec<u8>,
+    pub wallet_addr: Vec<u8>,
+}
