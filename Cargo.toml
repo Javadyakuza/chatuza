@@ -5,6 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+src = ["lib.rs", "wallet_lib.rs"]
 
 [[bin]]
 name = "main"
@@ -23,3 +24,4 @@ serde = {version = "1.0.193", features = ["derive"]}
 serde-reflection = "0.3.6"
 serde_json = "1.0.108"
 struct_iterable = "0.1.1"
+

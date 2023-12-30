@@ -6,7 +6,7 @@ use chatuza_db::delete_group_chat_room;
 use chatuza_db::delete_private_chat_room;
 use chatuza_db::diesel::prelude::*;
 use chatuza_db::establish_connection;
-use chatuza_db::get_p2p_chat_history;
+use chatuza_db::get_chat_room_history;
 use chatuza_db::models::*;
 use chatuza_db::schema::messages::timestamp;
 use chatuza_db::schema::{
@@ -14,6 +14,7 @@ use chatuza_db::schema::{
 };
 use chatuza_db::update_group_chat_room_info;
 use chatuza_db::update_message;
+use chatuza_db::wallet_lib::*;
 use chatuza_db::{add_new_group_chat_room, add_new_p2p_chat_room};
 use chatuza_db::{
     add_new_user, delete_user, get_user_with_username, update_user_credits, update_user_profile,
@@ -129,7 +130,7 @@ fn main() {
     // )
     // .unwrap();
 
-    let messages = get_p2p_chat_history(connection, 8, 4);
+    let messages = get_chat_room_history(connection, 8, 4);
 
     for message in messages.iter() {
         println!("{:?}", message);

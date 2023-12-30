@@ -1,19 +1,18 @@
 #![recursion_limit = "256"]
 pub mod models;
 pub mod schema;
+pub mod wallet_lib;
 
-use crate::models::{ChatRoomParticipants, ChatRooms, QMessages, QUsers, UserProfiles, Users};
-use crate::schema::{chat_room_participants, chat_rooms, messages, user_profiles, users};
+use crate::models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
+use crate::schema::{chat_room_participants, chat_rooms, user_profiles, users};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
-use models::{Messages, QChatRoomParticipants, QChatRooms};
-use quote::format_ident;
+use models::QChatRooms;
 use schema::{
-    chat_room_participants::dsl::*, chat_rooms::dsl::*, messages::dsl::*, user_profiles::dsl::*,
-    users::dsl::*,
+    chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
 pub use std::env;
 
@@ -489,134 +488,6 @@ pub fn del_participant_to_group_chat_room(
     Ok(())
 }
 
-pub fn add_new_message(_conn: &mut PgConnection, _message: &Messages) -> Result<i32, String> {
-    // checking the existence of the chat room
-    assert!(is_valid_chatroom(_conn, _message.chat_room_id));
-
-    // checking the existence of the users in the chat room
-    assert!(is_user_in_chat_room(
-        _conn,
-        _message.chat_room_id,
-        _message.sender_id
-    ));
-    assert!(is_user_in_chat_room(
-        _conn,
-        _message.chat_room_id,
-        _message.recipient_id
-    ));
-
-    // adding the message to the messages table
-
-    let new_message_info: QMessages = diesel::insert_into(messages::table)
-        .values(_message)
-        .returning(QMessages::as_select())
-        .get_result(_conn)
-        .unwrap();
-
-    Ok(new_message_info.message_id)
-}
-
-pub fn del_message(
-    _conn: &mut PgConnection,
-    _message_id: i32,
-    _remover_id: i32,
-) -> Result<(), String> {
-    // checking if messages exists
-    assert!(is_valid_message(_conn, _message_id));
-
-    // checking the authority of the remover
-    let message_info: QMessages = get_message_by_id(_conn, _message_id).unwrap();
-
-    if (is_group_chat(_conn, message_info.chat_room_id)) {
-        // its a group chat
-        let group_owner = get_group_owner_by_id(_conn, message_info.chat_room_id)
-            .expect("group chat owner not found !");
-        assert!(group_owner == _remover_id);
-    } else {
-        // its a p2p chat
-        assert!(message_info.sender_id == _remover_id);
-    }
-
-    // deleting the message
-    diesel::delete(messages.filter(messages::message_id.eq(_message_id)))
-        .execute(_conn)
-        .unwrap();
-
-    Ok(())
-}
-
-// check will be added to this function later
-pub fn update_message(
-    _conn: &mut PgConnection,
-    _new_message_content: String,
-    _message_id: i32,
-    _is_read: bool,
-    _editor_id: i32,
-) -> Result<(), String> {
-    // getting the chat room id
-    assert!(is_valid_message(_conn, _message_id));
-
-    let old_message_info: QMessages = get_message_by_id(_conn, _message_id).unwrap();
-
-    // checking if the editor is the sender
-    assert!(old_message_info.sender_id == _editor_id);
-
-    // updating the chat room info
-    diesel::update(messages.filter(messages::message_id.eq(old_message_info.message_id)))
-        .set((content.eq(&_new_message_content), is_read.eq(_is_read)))
-        .returning(QMessages::as_returning())
-        .get_result(_conn)
-        .expect("couldn't update the message");
-
-    println!("updated the message id {}", old_message_info.message_id);
-
-    Ok(())
-}
-
-// -- ChatRooms/ Message history GETTER functions -- //
-
-pub fn get_message_by_id(_conn: &mut PgConnection, _message_id: i32) -> Option<QMessages> {
-    let chat_room_info: Vec<QMessages> = messages
-        .filter(messages::message_id.eq(_message_id))
-        .select(QMessages::as_returning())
-        .load(_conn)
-        .unwrap();
-
-    if chat_room_info.len() != 1 {
-        None
-    } else {
-        Some(QMessages {
-            message_id: chat_room_info[0].message_id,
-            sender_id: chat_room_info[0].sender_id,
-            recipient_id: chat_room_info[0].recipient_id,
-            timestamp: chat_room_info[0].timestamp,
-            content: chat_room_info[0].content.clone(),
-            is_read: chat_room_info[0].is_read,
-            delivery_status: chat_room_info[0].delivery_status.clone(),
-            parent_message_id: chat_room_info[0].parent_message_id,
-            chat_room_id: chat_room_info[0].chat_room_id,
-        })
-    }
-}
-
-pub fn get_chat_room_history(
-    _conn: &mut PgConnection,
-    _chat_room_id: i32,
-    _requestor_id: i32,
-) -> Vec<QMessages> {
-    // checking the authority of the requestor
-    assert!(is_user_in_chat_room(_conn, _chat_room_id, _requestor_id));
-
-    // choking the existence of the chat room
-    assert!(is_valid_chatroom(_conn, _chat_room_id));
-
-    messages
-        .filter(messages::chat_room_id.eq(_chat_room_id))
-        .select(QMessages::as_select())
-        .load(_conn)
-        .unwrap()
-}
-
 pub fn get_chat_room_participants_by_id(
     _conn: &mut PgConnection,
     _chat_room_id: i32,
@@ -736,20 +607,6 @@ pub fn is_valid_user(_conn: &mut PgConnection, _user_id: i32) -> bool {
     let chat_room_info: Vec<Users> = users
         .filter(users::user_id.eq(_user_id))
         .select(Users::as_returning())
-        .load(_conn)
-        .unwrap();
-
-    if chat_room_info.len() != 1 {
-        false
-    } else {
-        true
-    }
-}
-
-pub fn is_valid_message(_conn: &mut PgConnection, _message_id: i32) -> bool {
-    let chat_room_info: Vec<Messages> = messages
-        .filter(messages::message_id.eq(_message_id))
-        .select(Messages::as_returning())
         .load(_conn)
         .unwrap();
 
