@@ -46,7 +46,7 @@ pub struct SinglePostUsername {
 pub struct NewP2PChatRoomIN {
     pub requestor_username_in: String,
     pub acceptor_username_in: String,
-    pub chat_room_pubkey: String,
+    pub chat_room_pubkey_in: String,
 }
 
 #[derive(FromForm, Debug, Serialize)]

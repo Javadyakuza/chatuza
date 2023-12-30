@@ -162,33 +162,26 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
     )
 }
 
-#[post("/create-p2p", data = "<new_profile>")]
-fn new_p2p(new_profile: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
+#[post("/create-p2p", data = "<new_p2p_data>")]
+fn new_p2p(new_p2p_data: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
     let mut conn = establish_connection();
     let req_user = get_user_with_username(
         &mut conn,
-        new_profile.requestor_username_in.clone().as_str(),
+        new_p2p_data.requestor_username_in.clone().as_str(),
     )
     .unwrap();
-    let acc_user =
-        get_user_with_username(&mut conn, new_profile.acceptor_username_in.clone().as_str())
-            .unwrap();
+    let acc_user = get_user_with_username(
+        &mut conn,
+        new_p2p_data.acceptor_username_in.clone().as_str(),
+    )
+    .unwrap();
 
     Json(
         add_new_p2p_chat_room(
             &mut conn,
-            &mut ChatRoomParticipants {
-                chat_room_id: 0,
-                user_id: req_user.user_id,
-                is_admin: false,
-                room_pub_key: new_profile.chat_room_pubkey,
-            },
-            &mut ChatRoomParticipants {
-                chat_room_id: 0,
-                user_id: acc_user.user_id,
-                is_admin: false,
-                room_pub_key: new_profile.chat_room_pubkey,
-            },
+            req_user.user_id,
+            acc_user.user_id,
+            new_p2p_data.chat_room_pubkey_in,
         )
         .unwrap(),
     )

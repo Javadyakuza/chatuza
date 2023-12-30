@@ -243,16 +243,17 @@ pub fn get_user_profile_with_username(
 
 pub fn add_new_p2p_chat_room(
     _conn: &mut PgConnection,
-    requestor_user: &mut ChatRoomParticipants,
-    acceptor_user: &mut ChatRoomParticipants,
-) -> Result<QChatRooms, String> {
+    requestor_user: i32,
+    acceptor_user: i32,
+    _chat_room_pubkey: String,
+) -> Result<QChatRooms, Box<dyn std::error::Error>> {
     // fetching the
     // checking if the two users are having an existing chat room, there may be some grout chats, we check that too.
     let shared_room_res: Vec<_> = chat_room_participants
         .filter(
             chat_room_participants::user_id
-                .eq(requestor_user.user_id)
-                .or(chat_room_participants::user_id.eq(acceptor_user.user_id)),
+                .eq(requestor_user)
+                .or(chat_room_participants::user_id.eq(acceptor_user)),
         )
         .group_by(chat_room_participants::chat_room_id)
         .having(diesel::dsl::count(chat_room_participants::user_id).le(2))
@@ -262,6 +263,7 @@ pub fn add_new_p2p_chat_room(
 
     if shared_room_res.len() == 0 {
         // updating the chat rooms db
+        // hashing the chatroom name because it doesn't have a name and it must be using the now time and the literal of the private room
         let mut hasher = DefaultHasher::new();
         Local::now()
             .offset()
@@ -269,10 +271,10 @@ pub fn add_new_p2p_chat_room(
             .push_str("Private Room")
             .hash(&mut hasher);
         let chat_room_name_hashed = hasher.finish().to_string();
-
         let values_of_chat_rooms = ChatRooms {
             room_name: chat_room_name_hashed,
             room_description: "private room".to_owned(),
+            chat_room_pubkey: _chat_room_pubkey.as_bytes().to_vec(),
         };
 
         let new_chat_room = diesel::insert_into(chat_rooms)
@@ -281,32 +283,40 @@ pub fn add_new_p2p_chat_room(
             .get_result(_conn)
             .expect("couldn't insert user credits");
 
-        requestor_user.chat_room_id = new_chat_room.chat_room_id;
-        acceptor_user.chat_room_id = new_chat_room.chat_room_id;
-
         // adding requester to the participants table
         diesel::insert_into(chat_room_participants)
-            .values(&*requestor_user)
+            .values(ChatRoomParticipants {
+                chat_room_id: new_chat_room.chat_room_id,
+                user_id: requestor_user,
+                is_admin: false,
+            })
             .returning(ChatRoomParticipants::as_returning())
             .get_result(_conn)
             .expect("couldn't insert user credits");
 
         // adding requester to the acceptor table
         diesel::insert_into(chat_room_participants)
-            .values(&*acceptor_user)
+            .values(ChatRoomParticipants {
+                chat_room_id: new_chat_room.chat_room_id,
+                user_id: acceptor_user,
+                is_admin: false,
+            })
             .returning(ChatRoomParticipants::as_returning())
             .get_result(_conn)
             .expect("couldn't insert user credits");
         println!(
             "new private chat room id {} \n user one id  {} \n user two id {} ",
-            new_chat_room.chat_room_id, requestor_user.user_id, acceptor_user.user_id
+            new_chat_room.chat_room_id, requestor_user, acceptor_user
         );
         Ok(new_chat_room)
     } else {
-        Err(format!(
-            " user id {} already has a p2p chat with user id {}",
-            requestor_user.user_id, acceptor_user.user_id
-        ))
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!(
+                " user id {} already has a p2p chat with user id {}",
+                requestor_user, acceptor_user
+            ),
+        )))
     }
 }
 
