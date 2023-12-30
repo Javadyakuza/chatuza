@@ -5,16 +5,19 @@ pub mod schema;
 pub mod wallet_lib;
 
 use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
-use crate::schema::{chat_room_participants, chat_rooms, user_profiles, users};
+use crate::schema::{
+    chat_room_participants, chat_rooms, solana_wallets, tron_wallets, user_profiles, users,
+};
 use chrono::Local;
-use db_models::{QChatRooms, UpdatableChatRooms};
+use db_models::{QChatRooms, QTronWallet, UpdatableChatRooms};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
 use schema::{
-    chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
+    chat_room_participants::dsl::*, chat_rooms::dsl::*, solana_wallets::dsl::*,
+    tron_wallets::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
 
 pub use std::env;
@@ -122,14 +125,70 @@ pub fn delete_user(conn: &mut PgConnection, _username: String) -> Result<bool, s
     let _user_id = get_user_with_username(conn, _username.as_str())
         .unwrap()
         .user_id;
+
+    // deleting the users p2p chatroom's
+    for chat_room in get_user_p2p_chat_rooms_by_user_id(conn, _user_id).unwrap() {
+        let p2p_chat_room_participants =
+            get_chat_room_participants_by_id(conn, chat_room.chat_room_id).unwrap();
+        let remover_username = get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
+            .unwrap()
+            .username;
+        let contact_username = get_user_with_user_id(conn, p2p_chat_room_participants[0].user_id)
+            .unwrap()
+            .username;
+        let _ = delete_p2p_chat_room(conn, &remover_username, &contact_username);
+    }
+
+    for gp in get_user_group_chat_rooms_by_user_id(conn, _user_id).unwrap() {
+        let group_owner = get_group_owner_by_id(conn, gp.chat_room_id).unwrap();
+        if group_owner == _user_id {
+            // deleting users owned group chats
+            let _ = delete_group_chat_room(conn, &gp.room_name, &_username).unwrap();
+        } else {
+            // deleting the user from group chats
+            let _ = del_participant_from_group_chat_room(
+                conn,
+                &ChatRoomParticipants {
+                    user_id: _user_id,
+                    chat_room_id: gp.chat_room_id,
+                    is_admin: false,
+                },
+                group_owner,
+            )
+            .unwrap();
+        }
+    }
+
     diesel::delete(user_profiles.filter(user_profiles::user_id.eq(_user_id)))
         .execute(conn)
-        .expect("couldn't update user profile");
+        .expect("couldn't delete user profile");
 
+    // checking if the user has any wallets created and deleting them
+    let _tron_wallets = tron_wallets
+        .filter(tron_wallets::user_id.eq(_user_id))
+        .select(QTronWallet::as_select())
+        .load(conn)
+        .unwrap();
+
+    let _solana_wallets = tron_wallets
+        .filter(tron_wallets::user_id.eq(_user_id))
+        .select(QTronWallet::as_select())
+        .load(conn)
+        .unwrap();
+    if _tron_wallets.len() as u32 == 1 {
+        diesel::delete(tron_wallets.filter(tron_wallets::user_id.eq(_user_id)))
+            .execute(conn)
+            .expect("couldn't delete user tron wallet");
+    }
+
+    if _solana_wallets.len() as u32 == 1 {
+        diesel::delete(solana_wallets.filter(solana_wallets::user_id.eq(_user_id)))
+            .execute(conn)
+            .expect("couldn't delete user solana wallet");
+    }
     diesel::delete(users.filter(users::user_id.eq(_user_id)))
         .execute(conn)
-        .expect("couldn't update user profile");
-
+        .expect("couldn't delete user credits");
     Ok(true)
 }
 

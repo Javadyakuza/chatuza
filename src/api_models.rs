@@ -96,5 +96,6 @@ pub struct GroupChatParticipantToRemoveIN {
 #[derive(FromForm, Debug, Serialize)]
 pub struct NewWalletIn {
     pub username_in: String,
-    pub wallet_addr: String,
+    pub wallet_addr_in: String,
+    pub wallet_backup_in: String,
 }

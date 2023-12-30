@@ -60,6 +60,7 @@ pub struct ChatRoomParticipants {
 pub struct TronWallet {
     pub user_id: i32,
     pub wallet_addr: Vec<u8>,
+    pub wallet_backup: Vec<u8>,
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
@@ -68,6 +69,7 @@ pub struct TronWallet {
 pub struct SolanaWallet {
     pub user_id: i32,
     pub wallet_addr: Vec<u8>,
+    pub wallet_backup: Vec<u8>,
 }
 // --  models with queryable primary keys -- //
 

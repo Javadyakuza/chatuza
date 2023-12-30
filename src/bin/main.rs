@@ -329,7 +329,8 @@ fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QSolanaWallet> 
             &mut conn,
             &SolanaWallet {
                 user_id: _user_id,
-                wallet_addr: new_wallet_info.wallet_addr.as_bytes().to_vec(),
+                wallet_addr: new_wallet_info.wallet_addr_in.as_bytes().to_vec(),
+                wallet_backup: new_wallet_info.wallet_backup_in.as_bytes().to_vec(),
             },
         )
         .unwrap(),
@@ -346,13 +347,14 @@ fn add_tron_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<QTronWallet> {
             &mut conn,
             &TronWallet {
                 user_id: _user_id,
-                wallet_addr: new_wallet_info.wallet_addr.as_bytes().to_vec(),
+                wallet_addr: new_wallet_info.wallet_addr_in.as_bytes().to_vec(),
+                wallet_backup: new_wallet_info.wallet_backup_in.as_bytes().to_vec(),
             },
         )
         .unwrap(),
     )
 }
-#[get("/get-tron-addr_by_username/<username>")]
+#[get("/get-tron-addr-by-username/<username>")]
 fn get_tron_addr(username: String) -> Json<String> {
     let mut conn = establish_connection();
     let _user_id = get_user_with_username(&mut conn, &username)
@@ -371,13 +373,13 @@ fn get_tron_addr(username: String) -> Json<String> {
     )
 }
 
-#[get("/get-solana-addr_by_username/<username>")]
+#[get("/get-solana-addr-by-username/<username>")]
 fn get_solana_addr(username: String) -> Json<String> {
     let mut conn = establish_connection();
     let _user_id = get_user_with_username(&mut conn, &username)
         .unwrap()
         .user_id;
-
+    
     Json(
         String::from_utf8_lossy(
             get_user_solana_wallet(&mut conn, _user_id)

@@ -33,10 +33,11 @@ pub fn initialize_new_tron_wallet(
         .values(new_wallet_info)
         .returning(QTronWallet::as_returning())
         .get_result(_conn)
-        .map_err(|_| {
+        .map_err(|e| {
             format!(
-                "Couldn't initialize a Solana wallet for user ID {}",
-                new_wallet_info.user_id
+                "Couldn't initialize a Solana wallet for user ID {} \n
+                error: {:?}",
+                new_wallet_info.user_id, e
             )
         })?;
 
@@ -67,15 +68,29 @@ pub fn initialize_new_solana_wallet(
         .values(new_wallet_info)
         .returning(QSolanaWallet::as_returning())
         .get_result(_conn)
-        .map_err(|_| {
+        .map_err(|e| {
             format!(
-                "Couldn't initialize a Solana wallet for user ID {}",
-                new_wallet_info.user_id
+                "Couldn't initialize a Solana wallet for user ID {} \n
+                error : {:?}",
+                new_wallet_info.user_id, e
             )
         })?;
 
     Ok(new_wallet_info)
 }
+
+// pub fn delete_tron_wallet(
+//     _conn: &mut PgConnection,
+//     username: &String,
+// ) -> Result<bool, Box<dyn std::error::Error>> {
+//     // checking if it exist before or no.
+// }
+
+// pub fn delete_solana_wallet(
+//     _conn: &mut PgConnection,
+//     username: &String,
+// ) -> Result<bool, Box<dyn std::error::Error>> {
+// }
 
 pub fn get_user_tron_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option<QTronWallet> {
     let wallets = tron_wallets
@@ -96,7 +111,7 @@ pub fn get_user_solana_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option
         .load::<QSolanaWallet>(_conn)
         .unwrap();
 
-    assert!(wallets.len() != 1);
+    assert!(wallets.len() == 1);
 
     wallets.into_iter().next()
 }
