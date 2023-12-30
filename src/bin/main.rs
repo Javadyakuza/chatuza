@@ -181,7 +181,7 @@ fn new_p2p(new_p2p_data: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
             &mut conn,
             req_user.user_id,
             acc_user.user_id,
-            new_p2p_data.chat_room_pubkey_in,
+            new_p2p_data.chat_room_pubkey_in.clone(),
         )
         .unwrap(),
     )

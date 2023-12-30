@@ -655,6 +655,7 @@ pub fn get_group_chat_by_name(
             chat_room_id: _chat_rooms[0].chat_room_id,
             room_name: _chat_rooms[0].room_name.clone(),
             room_description: _chat_rooms[0].room_description.clone(),
+            chat_room_pubkey: _chat_rooms[0].chat_room_pubkey.to_owned(),
         });
     }
 }
@@ -673,6 +674,7 @@ pub fn get_group_chat_by_id(_conn: &mut PgConnection, _chat_room_id: i32) -> Opt
             chat_room_id: _chat_rooms[0].chat_room_id,
             room_name: _chat_rooms[0].room_name.clone(),
             room_description: _chat_rooms[0].room_description.clone(),
+            chat_room_pubkey: _chat_rooms[0].chat_room_pubkey.to_owned(),
         });
     }
 }

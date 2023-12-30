@@ -79,6 +79,7 @@ pub struct QChatRooms {
     pub chat_room_id: i32,
     pub room_name: String,
     pub room_description: String,
+    pub chat_room_pubkey: Vec<u8>,
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
