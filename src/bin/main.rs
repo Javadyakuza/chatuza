@@ -162,22 +162,26 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
     )
 }
 
-// #[post("/create-p2p", data = "<new_profile>")]
-// fn new_p2p(new_profile: Form<NewP2PChatRoomIN>) -> Json<UserProfiles> {
-//     let mut conn = establish_connection();
-//     Json(
-//         update_user_profile(
-//             &mut conn,
-//             new_profile.username_in.clone(),
-//             &mut UserProfiles {
-//                 user_id: 0,
-//                 bio: Some(new_profile.bio_in.clone()),
-//                 profile_picture: Some(new_profile.profile_picture_in.clone()),
-//             },
-//         )
-//         .unwrap(),
-//     )
-// }
+#[post("/create-p2p", data = "<new_profile>")]
+fn new_p2p(new_profile: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
+    let mut conn = establish_connection();
+    Json(
+        add_new_p2p_chat_room(
+            &mut conn,
+            &mut ChatRoomParticipants {
+                chat_room_id: 0,
+                user_id: new_profile.requestor_user_in,
+                is_admin: false,
+            },
+            &mut ChatRoomParticipants {
+                chat_room_id: 0,
+                user_id: new_profile.acceptor_user_in,
+                is_admin: false,
+            },
+        )
+        .unwrap(),
+    )
+}
 
 #[post("/delete-user", data = "<username>")]
 fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
@@ -215,7 +219,8 @@ fn main() {
                 new_user,
                 update_user_conditionals,
                 update_user_profile_api,
-                delete_user_via_username
+                delete_user_via_username,
+                new_p2p
             ],
         )
         // .attach(DbConn::fairing())

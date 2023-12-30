@@ -245,7 +245,7 @@ pub fn add_new_p2p_chat_room(
     _conn: &mut PgConnection,
     requestor_user: &mut ChatRoomParticipants,
     acceptor_user: &mut ChatRoomParticipants,
-) -> Result<(), String> {
+) -> Result<QChatRooms, String> {
     // fetching the
     // checking if the two users are having an existing chat room, there may be some grout chats, we check that too.
     let shared_room_res: Vec<_> = chat_room_participants
@@ -301,7 +301,7 @@ pub fn add_new_p2p_chat_room(
             "new private chat room id {} \n user one id  {} \n user two id {} ",
             new_chat_room.chat_room_id, requestor_user.user_id, acceptor_user.user_id
         );
-        Ok(())
+        Ok(new_chat_room)
     } else {
         Err(format!(
             " user id {} already has a p2p chat with user id {}",
@@ -310,7 +310,7 @@ pub fn add_new_p2p_chat_room(
     }
 }
 
-pub fn delete_private_chat_room(
+pub fn delete_p2p_chat_room(
     _conn: &mut PgConnection,
     _chat_room_id: i32,
     _remover_id: i32,
