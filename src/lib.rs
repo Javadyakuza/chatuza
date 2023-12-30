@@ -211,6 +211,31 @@ pub fn get_user_profile_with_user_id(
     }
 }
 
+pub fn get_user_profile_with_username(
+    _conn: &mut PgConnection,
+    _username: String,
+) -> Option<UserProfiles> {
+    let _user_id = get_user_with_username(_conn, _username.as_str())
+        .unwrap()
+        .user_id;
+    let user_row: Vec<UserProfiles> = user_profiles
+        .filter(user_profiles::user_id.eq(&_user_id))
+        .select(UserProfiles::as_select())
+        .load(_conn)
+        .unwrap_or(vec![]);
+
+    if user_row.len() == 1 {
+        Some(UserProfiles {
+            user_id: _user_id,
+            bio: user_row[0].bio.clone(),
+            profile_picture: user_row[0].profile_picture.clone(),
+        })
+    } else {
+        // some thing is wrong
+        None
+    }
+}
+
 // -- ChatRooms/ Message history SETTER functions -- //
 
 pub fn add_new_p2p_chat_room(
