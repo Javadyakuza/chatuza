@@ -24,9 +24,8 @@ diesel::table! {
     solana_wallets (wallet_id) {
         wallet_id -> Int4,
         user_id -> Int4,
-        #[max_length = 60]
-        wallet_addr -> Varchar,
         wallet_backup -> Bytea,
+        wallet_addr -> Nullable<Bytea>,
     }
 }
 
@@ -34,9 +33,8 @@ diesel::table! {
     tron_wallets (wallet_id) {
         wallet_id -> Int4,
         user_id -> Int4,
-        #[max_length = 60]
-        wallet_addr -> Varchar,
         wallet_backup -> Bytea,
+        wallet_addr -> Nullable<Bytea>,
     }
 }
 

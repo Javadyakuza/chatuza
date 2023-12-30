@@ -1,29 +1,9 @@
 use diesel::prelude::*;
 // use merge_derivable;
 use crate::schema::chat_room_participants;
-use base64;
 use rocket::*;
 use serde::Serialize;
 use struct_iterable::Iterable;
-
-use base64::{
-    alphabet,
-    engine::{self, general_purpose},
-    Engine,
-};
-use rocket::http::RawStr;
-use rocket::request::FromFormValue;
-use std::str::FromStr;
-
-type BINARYA = Vec<u8>;
-
-impl<'v> FromFormValue<'v> for BINARYA {
-    type Error = &'v RawStr;
-
-    fn from_form_value(form_value: &'v RawStr) -> Result<BINARYA, &'v RawStr> {
-        Engine::decode(form_value).map_err(|_| form_value)
-    }
-}
 
 #[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize, PartialEq)]
 #[diesel(table_name = crate::schema::users)]
@@ -69,7 +49,7 @@ pub struct ChatRoomParticipants {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct TronWallet {
     pub user_id: i32,
-    pub wallet_addr: Vec<u8>,
+    pub wallet_addr: String,
 }
 
 #[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
@@ -77,7 +57,7 @@ pub struct TronWallet {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct SolanaWallet {
     pub user_id: i32,
-    pub wallet_addr: Vec<u8>,
+    pub wallet_addr: String,
 }
 // --  models with queryable primary keys -- //
 
@@ -135,7 +115,7 @@ allow_group_by!(
 pub struct QSolanaWallet {
     pub wallet_id: i32,
     pub user_id: i32,
-    pub wallet_addr: Vec<u8>,
+    pub wallet_addr: String,
 }
 
 #[derive(Queryable, FromForm, Selectable, Debug, Insertable, Iterable, Serialize)]
@@ -144,5 +124,5 @@ pub struct QSolanaWallet {
 pub struct QTronWallet {
     pub wallet_id: i32,
     pub user_id: i32,
-    pub wallet_addr: Vec<u8>,
+    pub wallet_addr: String,
 }
