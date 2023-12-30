@@ -135,4 +135,20 @@ fn main() {
     // for message in messages.iter() {
     //     println!("{:?}", message);
     // }
+    // let new_tron_wallet = TronWallet {
+    //     user_id: 0,
+    //     pub_key: "0b28d1960dd585990e41b791689a80713abc8b325f29aeb4cd2416962a46d184"
+    //         .as_bytes()
+    //         .to_vec(),
+    //     wallet_addr: "TVP9nH2bcUXNJnH3eEeTovw8GXdxhoak2k".as_bytes().to_vec(),
+    // };
+    // initialize_new_tron_wallet(connection, &new_tron_wallet).unwrap();
+    let new_solana_wallet = SolanaWallet {
+        user_id: 5,
+        pub_key: "0b28d1960dd585990e41b791689a80713abc8b325f29aeb4cd2416962a46d184"
+            .as_bytes()
+            .to_vec(),
+        wallet_addr: "TVP9nH2bcUXNJnH3eEeTovw8GXdxhoak2k".as_bytes().to_vec(),
+    };
+    initialize_new_solana_wallet(connection, &new_solana_wallet).unwrap();
 }

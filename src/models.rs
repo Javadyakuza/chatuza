@@ -1,4 +1,4 @@
-use diesel::{prelude::*, sql_types::Bytea};
+use diesel::prelude::*;
 // use merge_derivable;
 use struct_iterable::Iterable;
 
@@ -44,25 +44,22 @@ pub struct ChatRoomParticipants {
 }
 
 #[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
-#[diesel(table_name = crate::schema::solana_wallets)]
+#[diesel(table_name = crate::schema::tron_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct SolanaWallet {
-    // pub wallet_id: i32,
+pub struct TronWallet {
     pub user_id: i32,
     pub pub_key: Vec<u8>,
     pub wallet_addr: Vec<u8>,
 }
 
 #[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
-#[diesel(table_name = crate::schema::tron_wallets)]
+#[diesel(table_name = crate::schema::solana_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct TronWallet {
-    // pub wallet_id: i32,
+pub struct SolanaWallet {
     pub user_id: i32,
     pub pub_key: Vec<u8>,
     pub wallet_addr: Vec<u8>,
 }
-
 // --  models with queryable primary keys -- //
 
 #[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
