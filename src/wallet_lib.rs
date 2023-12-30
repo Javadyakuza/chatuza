@@ -184,7 +184,7 @@ pub fn get_user_solana_wallet(
         .select(QSolanaWallet::as_select())
         .load(_conn)
         .unwrap_or(vec![]);
-
+    ////
     if wallets.len() == 1 {
         Ok(wallets.into_iter().next().unwrap()) // panic impossible
     } else {
