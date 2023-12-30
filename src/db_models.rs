@@ -2,10 +2,10 @@ use diesel::prelude::*;
 // use merge_derivable;
 use crate::schema::chat_room_participants;
 use rocket::*;
-use serde;
+use serde::{self, Deserialize, Serialize};
 use struct_iterable::Iterable;
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable, PartialEq)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable, PartialEq)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Users {
@@ -15,7 +15,7 @@ pub struct Users {
     pub password: String,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable, PartialEq)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable, PartialEq)]
 #[diesel(table_name = crate::schema::user_profiles)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UserProfiles {
@@ -25,7 +25,7 @@ pub struct UserProfiles {
     pub profile_picture: Option<String>,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_rooms)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChatRooms {
@@ -34,7 +34,7 @@ pub struct ChatRooms {
     pub room_description: String,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_room_participants)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ChatRoomParticipants {
@@ -44,7 +44,7 @@ pub struct ChatRoomParticipants {
     pub is_admin: bool,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::tron_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct TronWallet {
@@ -52,7 +52,7 @@ pub struct TronWallet {
     pub wallet_addr: Vec<u8>,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::solana_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct SolanaWallet {
@@ -61,7 +61,7 @@ pub struct SolanaWallet {
 }
 // --  models with queryable primary keys -- //
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QUsers {
@@ -71,7 +71,7 @@ pub struct QUsers {
     pub password: String,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_rooms)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QChatRooms {
@@ -80,7 +80,7 @@ pub struct QChatRooms {
     pub room_description: String,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::chat_room_participants)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QChatRoomParticipants {
@@ -109,7 +109,7 @@ allow_group_by!(
     chat_room_participants::is_admin
 );
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::solana_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QSolanaWallet {
@@ -118,7 +118,7 @@ pub struct QSolanaWallet {
     pub wallet_addr: Vec<u8>,
 }
 
-#[derive(Queryable, Selectable, Debug, Insertable, Iterable)]
+#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::tron_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct QTronWallet {
@@ -126,3 +126,6 @@ pub struct QTronWallet {
     pub user_id: i32,
     pub wallet_addr: Vec<u8>,
 }
+
+// the following structs are the rocket compatible versions to be returned to the user
+// the rocket does not supports the
