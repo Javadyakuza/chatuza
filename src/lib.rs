@@ -10,8 +10,10 @@ pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
 use models::{Messages, QChatRoomParticipants, QChatRooms};
+use quote::format_ident;
 use schema::{
-    chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
+    chat_room_participants::dsl::*, chat_rooms::dsl::*, messages::dsl::*, user_profiles::dsl::*,
+    users::dsl::*,
 };
 pub use std::env;
 
@@ -514,9 +516,52 @@ pub fn add_new_message(_conn: &mut PgConnection, _message: &Messages) -> Result<
     Ok(new_message_info.message_id)
 }
 
-pub fn del_message() {}
+pub fn del_message(
+    _conn: &mut PgConnection,
+    _message_id: i32,
+    _remover_id: i32,
+) -> Result<(), String> {
+    // checking if messages exists
+    assert!(is_valid_message(_conn, _message_id));
+
+    // checking the authority of the remover
+    let message_info: Messages = get_message_by_id(_conn, _message_id).unwrap();
+    let group_owner = get_group_owner_by_id(_conn, message_info.chat_room_id)
+        .expect("group chat owner not found !");
+    assert!(group_owner == _remover_id);
+
+    // deleting the message
+    diesel::delete(messages.filter(messages::message_id.eq(_message_id)))
+        .execute(_conn)
+        .unwrap();
+
+    Ok(())
+}
 
 // -- ChatRooms/ Message history GETTER functions -- //
+
+pub fn get_message_by_id(_conn: &mut PgConnection, _message_id: i32) -> Option<Messages> {
+    let chat_room_info: Vec<Messages> = messages
+        .filter(messages::message_id.eq(_message_id))
+        .select(Messages::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
+        None
+    } else {
+        Some(Messages {
+            sender_id: chat_room_info[0].sender_id,
+            recipient_id: chat_room_info[0].recipient_id,
+            timestamp: chat_room_info[0].timestamp,
+            content: chat_room_info[0].content.clone(),
+            is_read: chat_room_info[0].is_read,
+            delivery_status: chat_room_info[0].delivery_status.clone(),
+            parent_message_id: chat_room_info[0].parent_message_id,
+            chat_room_id: chat_room_info[0].chat_room_id,
+        })
+    }
+}
 
 pub fn get_p2p_chat_history() {}
 
@@ -645,6 +690,20 @@ pub fn is_valid_user(_conn: &mut PgConnection, _user_id: i32) -> bool {
     let chat_room_info: Vec<Users> = users
         .filter(users::user_id.eq(_user_id))
         .select(Users::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
+        false
+    } else {
+        true
+    }
+}
+
+pub fn is_valid_message(_conn: &mut PgConnection, _message_id: i32) -> bool {
+    let chat_room_info: Vec<Messages> = messages
+        .filter(messages::message_id.eq(_message_id))
+        .select(Messages::as_returning())
         .load(_conn)
         .unwrap();
 

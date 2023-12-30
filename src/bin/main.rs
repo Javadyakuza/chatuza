@@ -1,5 +1,6 @@
 use chatuza_db::add_new_message;
 use chatuza_db::add_participant_to_group_chat_room;
+use chatuza_db::del_message;
 use chatuza_db::del_participant_to_group_chat_room;
 use chatuza_db::delete_group_chat_room;
 use chatuza_db::delete_private_chat_room;
@@ -113,5 +114,7 @@ fn main() {
         parent_message_id: None,
     };
 
-    let add_msg_res = add_new_message(connection, &new_message).unwrap();
+    // let add_msg_res = add_new_message(connection, &new_message).unwrap();
+
+    del_message(connection, 1, 5).unwrap();
 }
