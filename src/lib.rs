@@ -635,3 +635,49 @@ pub fn is_user_in_chat_room(_conn: &mut PgConnection, _chat_room_id: i32, _user_
         true
     }
 }
+
+pub fn get_user_p2p_chat_rooms_by_user_id(
+    _conn: &mut PgConnection,
+    _user_id: i32,
+) -> Option<Vec<QChatRooms>> {
+    let mut _chat_rooms: Vec<QChatRooms> = chat_rooms
+        .inner_join(
+            chat_room_participants
+                .on(chat_room_participants::chat_room_id.eq(chat_rooms::chat_room_id)),
+        )
+        .filter(chat_room_participants::user_id.eq(chat_room_participants::user_id))
+        .filter(chat_rooms::room_name.eq("private room")) // Add this filter for room name
+        .select(QChatRooms::as_select())
+        .load(_conn)
+        .unwrap();
+
+    if _chat_rooms.len() == 0 {
+        // chat room id doesn't exists
+        None
+    } else {
+        Some(_chat_rooms)
+    }
+}
+
+pub fn get_user_group_chat_rooms_by_user_id(
+    _conn: &mut PgConnection,
+    _user_id: i32,
+) -> Option<Vec<QChatRooms>> {
+    let mut _chat_rooms: Vec<QChatRooms> = chat_rooms
+        .inner_join(
+            chat_room_participants
+                .on(chat_room_participants::chat_room_id.eq(chat_rooms::chat_room_id)),
+        )
+        .filter(chat_room_participants::user_id.eq(chat_room_participants::user_id))
+        .filter(chat_rooms::room_name.ne("private room")) // Add this filter for room name
+        .select(QChatRooms::as_select())
+        .load(_conn)
+        .unwrap();
+
+    if _chat_rooms.len() == 0 {
+        // chat room id doesn't exists
+        None
+    } else {
+        Some(_chat_rooms)
+    }
+}
