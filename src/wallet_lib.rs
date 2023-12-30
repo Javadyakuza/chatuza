@@ -60,22 +60,6 @@ pub fn initialize_new_solana_wallet(
     }
 }
 
-pub fn get_user_tron_wallet_addr() -> Result<String, String> {
-    Ok("".to_owned())
-}
-
-pub fn get_user_wallet_wallet_addr() -> Result<String, String> {
-    Ok("".to_owned())
-}
-
-pub fn get_user_solana_wallet_pub_key() -> Result<String, String> {
-    Ok("".to_owned())
-}
-
-pub fn get_user_tron_wallet_pub_key() -> Result<String, String> {
-    Ok("".to_owned())
-}
-
 pub fn get_user_tron_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option<QTronWallet> {
     let wallets: Vec<QTronWallet> = tron_wallets
         .filter(tron_wallets::user_id.eq(_user_id))
