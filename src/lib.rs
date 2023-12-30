@@ -66,7 +66,7 @@ pub fn add_new_user(
 
 pub fn update_user_credits(
     conn: &mut PgConnection,
-    old_username: String,
+    old_username: &String,
     new_user_credits: &Users,
 ) -> Result<QUsers, Box<dyn std::error::Error>> {
     let user_info: QUsers =
@@ -81,7 +81,7 @@ pub fn update_user_credits(
         )));
     }
 
-    if let Some(_) = get_user_with_username(conn, &new_user_credits.email) {
+    if let Some(_) = get_user_with_email(conn, &new_user_credits.email) {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             "email already exists !",
@@ -103,7 +103,7 @@ pub fn update_user_credits(
 
 pub fn update_user_profile(
     conn: &mut PgConnection,
-    old_username: String,
+    old_username: &String,
     user_profile: &mut UserProfiles,
 ) -> Result<UserProfiles, Box<dyn std::error::Error>> {
     //fetching the user id and set it accordingly
@@ -121,7 +121,7 @@ pub fn update_user_profile(
     Ok(get_user_profile_with_user_id(conn, user_profile.user_id).unwrap())
 }
 
-pub fn delete_user(conn: &mut PgConnection, _username: String) -> Result<bool, std::io::Error> {
+pub fn delete_user(conn: &mut PgConnection, _username: &String) -> Result<bool, std::io::Error> {
     let _user_id = get_user_with_username(conn, _username.as_str())
         .unwrap()
         .user_id;
@@ -143,7 +143,6 @@ pub fn delete_user(conn: &mut PgConnection, _username: String) -> Result<bool, s
         }
     }
     if let Some(gps) = get_user_group_chat_rooms_by_user_id(conn, _user_id) {
-        println!("{:?}", gps);
         for gp in gps {
             let group_owner = get_group_owner_by_id(conn, gp.chat_room_id).unwrap();
             if group_owner == _user_id {

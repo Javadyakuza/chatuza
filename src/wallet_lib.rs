@@ -1,7 +1,7 @@
 use crate::db_models::{QSolanaWallet, QTronWallet, SolanaWallet, TronWallet};
-use crate::is_valid_user;
 use crate::schema::{solana_wallets, tron_wallets};
 use crate::schema::{solana_wallets::dsl::*, tron_wallets::dsl::*};
+use crate::{get_user_with_username, is_valid_user};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
@@ -79,18 +79,29 @@ pub fn initialize_new_solana_wallet(
     Ok(new_wallet_info)
 }
 
-// pub fn delete_tron_wallet(
-//     _conn: &mut PgConnection,
-//     username: &String,
-// ) -> Result<bool, Box<dyn std::error::Error>> {
-//     // checking if it exist before or no.
-// }
+pub fn delete_tron_wallet(
+    _conn: &mut PgConnection,
+    _username: &String,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let _user_id_removable = get_user_with_username(_conn, _username).unwrap().user_id;
+    // checking if it exist before or no.
+    diesel::delete(tron_wallets.filter(tron_wallets::user_id.eq(_user_id_removable)))
+        .execute(_conn)
+        .expect("couldn't delete user tron wallet");
 
-// pub fn delete_solana_wallet(
-//     _conn: &mut PgConnection,
-//     username: &String,
-// ) -> Result<bool, Box<dyn std::error::Error>> {
-// }
+    Ok(true)
+}
+
+pub fn delete_solana_wallet(
+    _conn: &mut PgConnection,
+    _username: &String,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let _user_id_removable = get_user_with_username(_conn, _username).unwrap().user_id;
+    diesel::delete(solana_wallets.filter(solana_wallets::user_id.eq(_user_id_removable)))
+        .execute(_conn)
+        .expect("couldn't delete user solana wallet");
+    Ok(true)
+}
 
 pub fn get_user_tron_wallet(_conn: &mut PgConnection, _user_id: i32) -> Option<QTronWallet> {
     let wallets = tron_wallets

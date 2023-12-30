@@ -140,7 +140,7 @@ fn update_user_conditionals(new_credits: Form<UpdatedUserCreditsIN>) -> Json<QUs
     Json(
         update_user_credits(
             &mut conn,
-            new_credits.username_out.clone(),
+            &new_credits.username_out.clone(),
             &Users {
                 username: new_credits.username_in.clone(),
                 email: new_credits.email_in.clone(),
@@ -157,7 +157,7 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
     Json(
         update_user_profile(
             &mut conn,
-            new_profile.username_in.clone(),
+            &new_profile.username_in.clone(),
             &mut UserProfiles {
                 user_id: 0,
                 bio: Some(new_profile.bio_in.clone()),
@@ -171,7 +171,7 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
 #[post("/delete-user", data = "<username>")]
 fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
     let mut conn = establish_connection();
-    Json(delete_user(&mut conn, username.username_in.clone()).unwrap())
+    Json(delete_user(&mut conn, &username.username_in.clone()).unwrap())
 }
 
 #[post("/create-p2p", data = "<new_p2p_info>")]
@@ -266,6 +266,7 @@ fn add_user_to_gp(new_participant: Form<NewGroupChatParticipantIN>) -> Json<Chat
                 user_id: _user_id,
                 is_admin: false,
             },
+            &new_participant.adder_username_in,
         )
         .unwrap(),
     )
