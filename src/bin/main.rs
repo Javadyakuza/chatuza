@@ -187,6 +187,19 @@ fn new_p2p(new_p2p_info: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
     )
 }
 
+#[post("/delete-p2p", data = "<new_gp_info>")]
+fn delete_p2p(new_gp_info: Form<DeleteP2PChatRoomIN>) -> Json<bool> {
+    let mut conn = establish_connection();
+    Json(
+        delete_p2p_chat_room(
+            &mut conn,
+            &new_gp_info.remover_username_in.clone(),
+            &new_gp_info.contact_username_in.clone(),
+        )
+        .unwrap(),
+    )
+}
+
 #[post("/create-gp", data = "<new_gp_info>")]
 fn new_gp(new_gp_info: Json<NewGroupChatRoomIN>) -> Json<QChatRooms> {
     let mut conn = establish_connection();
@@ -272,6 +285,7 @@ fn main() {
                 update_user_profile_api,
                 delete_user_via_username,
                 new_p2p,
+                delete_p2p,
                 new_gp,
                 update_gp,
                 delete_gp

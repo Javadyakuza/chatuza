@@ -322,11 +322,21 @@ pub fn add_new_p2p_chat_room(
 
 pub fn delete_p2p_chat_room(
     _conn: &mut PgConnection,
-    _chat_room_id: i32,
-    _remover_id: i32,
-) -> Result<(), String> {
-    // checking the authority of the remover
+    remover_username: &String,
+    contact_username: &String,
+) -> Result<bool, String> {
+    let _remover_id = get_user_with_username(_conn, remover_username)
+        .unwrap()
+        .user_id;
+    let _contact_id = get_user_with_username(_conn, contact_username)
+        .unwrap()
+        .user_id;
 
+    let _chat_room_id = get_two_users_p2p_chat_room(_conn, _remover_id, _contact_id)
+        .unwrap()
+        .chat_room_id;
+
+    // checking the authority of the remover
     let participants = get_chat_room_participants_by_id(_conn, _chat_room_id)
         .expect(format!("no chat rooms with id {} found !", _chat_room_id).as_str());
     if participants.len() != 2 {
@@ -360,7 +370,7 @@ pub fn delete_p2p_chat_room(
             )
             .as_str(),
         );
-    Ok(())
+    Ok(true)
 }
 
 pub fn add_new_group_chat_room(

@@ -51,8 +51,8 @@ pub struct NewP2PChatRoomIN {
 }
 #[derive(FromForm, Debug, Serialize)]
 pub struct DeleteP2PChatRoomIN {
-    pub chat_room_id_in: i32,
-    pub remover_user_id_in: i32,
+    pub remover_username_in: String,
+    pub contact_username_in: String,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
