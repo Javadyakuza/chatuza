@@ -138,7 +138,7 @@ fn main() {
                 validate_user,
                 validate_chatroom_user,
                 get_all_user_groups,
-                get_all_user_p2p
+                get_all_user_p2p,
             ],
         )
         // .attach(DbConn::fairing())
