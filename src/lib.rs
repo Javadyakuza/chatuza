@@ -432,13 +432,16 @@ pub fn update_group_chat_room_info(
     _conn: &mut PgConnection,
     old_chat_room_name: &String,
     new_chat_room_info: &ChatRooms,
-    editor_user_id: i32,
+    editor_username: &String,
 ) -> Result<(), String> {
     // getting the chat room id
     let _chat_room_id = get_group_chat_by_name(_conn, old_chat_room_name)
         .expect("couldn't find the group chat room")
         .chat_room_id;
 
+    let editor_user_id = get_user_with_username(_conn, &editor_username)
+        .unwrap()
+        .user_id;
     // checking if the editor is the admin
     if editor_user_id != get_group_owner_by_id(_conn, _chat_room_id).unwrap() {
         return Err(format!(
