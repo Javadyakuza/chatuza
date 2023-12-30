@@ -599,7 +599,7 @@ pub fn get_message_by_id(_conn: &mut PgConnection, _message_id: i32) -> Option<Q
     }
 }
 
-pub fn get_p2p_chat_history(
+pub fn get_chat_room_history(
     _conn: &mut PgConnection,
     _chat_room_id: i32,
     _requestor_id: i32,
@@ -616,8 +616,6 @@ pub fn get_p2p_chat_history(
         .load(_conn)
         .unwrap()
 }
-
-pub fn get_group_chat_history() {}
 
 pub fn get_chat_room_participants_by_id(
     _conn: &mut PgConnection,
