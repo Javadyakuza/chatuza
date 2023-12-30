@@ -88,6 +88,16 @@ fn validate_chatroom_user(user_id: i32, chatroom_id: i32) -> Json<bool> {
     Json(is_user_in_chat_room(&mut conn, user_id, chatroom_id))
 }
 
+#[get("/user_all_gp/<user_id>")]
+fn get_all_user_groups(user_id: i32) -> Json<Vec<QChatRooms>> {
+    let mut conn = establish_connection();
+    Json(get_user_p2p_chat_rooms_by_user_id(&mut conn, user_id).unwrap())
+}
+#[get("/user_all_p2p/<user_id>")]
+fn get_all_user_p2p(user_id: i32) -> Json<Vec<QChatRooms>> {
+    let mut conn = establish_connection();
+    Json(get_user_group_chat_rooms_by_user_id(&mut conn, user_id).unwrap())
+}
 #[derive(FromForm, Debug, Serialize)]
 struct Book {
     name: String,
@@ -126,7 +136,9 @@ fn main() {
                 validate_gp,
                 validate_cr,
                 validate_user,
-                validate_chatroom_user
+                validate_chatroom_user,
+                get_all_user_groups,
+                get_all_user_p2p
             ],
         )
         // .attach(DbConn::fairing())
