@@ -48,7 +48,6 @@ pub struct ChatRoomParticipants {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct TronWallet {
     pub user_id: i32,
-    pub pub_key: Vec<u8>,
     pub wallet_addr: Vec<u8>,
 }
 
@@ -57,7 +56,6 @@ pub struct TronWallet {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct SolanaWallet {
     pub user_id: i32,
-    pub pub_key: Vec<u8>,
     pub wallet_addr: Vec<u8>,
 }
 // --  models with queryable primary keys -- //
@@ -116,7 +114,6 @@ allow_group_by!(
 pub struct QSolanaWallet {
     pub wallet_id: i32,
     pub user_id: i32,
-    pub pub_key: Vec<u8>,
     pub wallet_addr: Vec<u8>,
 }
 
@@ -126,6 +123,5 @@ pub struct QSolanaWallet {
 pub struct QTronWallet {
     pub wallet_id: i32,
     pub user_id: i32,
-    pub pub_key: Vec<u8>,
     pub wallet_addr: Vec<u8>,
 }
