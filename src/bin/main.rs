@@ -1,3 +1,4 @@
+use chatuza_db::add_new_message;
 use chatuza_db::add_participant_to_group_chat_room;
 use chatuza_db::del_participant_to_group_chat_room;
 use chatuza_db::delete_group_chat_room;
@@ -5,6 +6,7 @@ use chatuza_db::delete_private_chat_room;
 use chatuza_db::diesel::prelude::*;
 use chatuza_db::establish_connection;
 use chatuza_db::models::*;
+use chatuza_db::schema::messages::timestamp;
 use chatuza_db::schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
@@ -13,7 +15,9 @@ use chatuza_db::{add_new_group_chat_room, add_new_p2p_chat_room};
 use chatuza_db::{
     add_new_user, delete_user, get_user_with_username, update_user_credits, update_user_profile,
 };
-
+use chrono::Utc;
+use diesel::pg::data_types::PgTimestamp;
+use diesel::prelude::*;
 fn main() {
     let connection = &mut establish_connection();
 
@@ -95,6 +99,19 @@ fn main() {
     // println!("{:?}", res);
 
     // add_participant_to_group_chat_room(connection, &chat_room_num_1_u_2).unwrap();
-    del_participant_to_group_chat_room(connection, &chat_room_num_1_u_2, 5).unwrap();
+    // del_participant_to_group_chat_room(connection, &chat_room_num_1_u_2, 5).unwrap();
     // delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
+
+    let new_message: Messages = Messages {
+        sender_id: 6,
+        recipient_id: 4,
+        timestamp: std::time::SystemTime::now(),
+        content: "hi there is a message from user 5".to_owned(),
+        is_read: false,
+        delivery_status: "sent".to_owned(),
+        chat_room_id: 8,
+        parent_message_id: None,
+    };
+
+    let add_msg_res = add_new_message(connection, &new_message).unwrap();
 }

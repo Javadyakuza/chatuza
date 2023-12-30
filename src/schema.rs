@@ -30,6 +30,7 @@ diesel::table! {
         #[max_length = 255]
         delivery_status -> Varchar,
         parent_message_id -> Nullable<Int4>,
+        chat_room_id -> Int4,
     }
 }
 
@@ -58,6 +59,7 @@ diesel::table! {
 
 diesel::joinable!(chat_room_participants -> chat_rooms (chat_room_id));
 diesel::joinable!(chat_room_participants -> users (user_id));
+diesel::joinable!(messages -> chat_rooms (chat_room_id));
 diesel::joinable!(user_profiles -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(

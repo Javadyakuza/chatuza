@@ -2,14 +2,14 @@
 pub mod models;
 pub mod schema;
 
-use crate::models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
+use crate::models::{ChatRoomParticipants, ChatRooms, QMessages, QUsers, UserProfiles, Users};
 use crate::schema::{chat_room_participants, chat_rooms, messages, user_profiles, users};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
-use models::{QChatRoomParticipants, QChatRooms};
+use models::{Messages, QChatRoomParticipants, QChatRooms};
 use schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, user_profiles::dsl::*, users::dsl::*,
 };
@@ -486,7 +486,33 @@ pub fn del_participant_to_group_chat_room(
 
     Ok(())
 }
-pub fn add_new_message() {}
+
+pub fn add_new_message(_conn: &mut PgConnection, _message: &Messages) -> Result<i32, String> {
+    // checking the existence of the chat room
+    assert!(is_valid_chatroom(_conn, _message.chat_room_id));
+
+    // checking the existence of the users in the chat room
+    assert!(is_user_in_chat_room(
+        _conn,
+        _message.chat_room_id,
+        _message.sender_id
+    ));
+    assert!(is_user_in_chat_room(
+        _conn,
+        _message.chat_room_id,
+        _message.recipient_id
+    ));
+
+    // adding the message to the messages table
+
+    let new_message_info: QMessages = diesel::insert_into(messages::table)
+        .values(_message)
+        .returning(QMessages::as_select())
+        .get_result(_conn)
+        .unwrap();
+
+    Ok(new_message_info.message_id)
+}
 
 pub fn del_message() {}
 
@@ -595,6 +621,52 @@ pub fn is_group_chat(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
     if chat_room_info.len() != 1 {
         false
     } else if chat_room_info[0].room_name == "private room" {
+        false
+    } else {
+        true
+    }
+}
+
+pub fn is_valid_chatroom(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
+    let chat_room_info: Vec<ChatRooms> = chat_rooms
+        .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
+        .select(ChatRooms::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
+        false
+    } else {
+        true
+    }
+}
+
+pub fn is_valid_user(_conn: &mut PgConnection, _user_id: i32) -> bool {
+    let chat_room_info: Vec<Users> = users
+        .filter(users::user_id.eq(_user_id))
+        .select(Users::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
+        false
+    } else {
+        true
+    }
+}
+
+pub fn is_user_in_chat_room(_conn: &mut PgConnection, _chat_room_id: i32, _user_id: i32) -> bool {
+    let chat_room_info: Vec<ChatRoomParticipants> = chat_room_participants
+        .filter(
+            chat_room_participants::chat_room_id
+                .eq(_chat_room_id)
+                .and(chat_room_participants::user_id.eq(_user_id)),
+        )
+        .select(ChatRoomParticipants::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
         false
     } else {
         true
