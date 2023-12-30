@@ -1,4 +1,5 @@
 use chatuza_db::add_participant_to_group_chat_room;
+use chatuza_db::del_participant_to_group_chat_room;
 use chatuza_db::delete_group_chat_room;
 use chatuza_db::delete_private_chat_room;
 use chatuza_db::diesel::prelude::*;
@@ -85,7 +86,7 @@ fn main() {
     // .unwrap();
 
     let mut chat_room_num_1_u_2: ChatRoomParticipants = ChatRoomParticipants {
-        chat_room_id: 6,
+        chat_room_id: 8,
         user_id: 2,
         is_admin: false,
     };
@@ -93,6 +94,7 @@ fn main() {
     // let res = update_group_chat_room_info(connection, &"miners".to_owned(), &new_chat_room_info, 5);
     // println!("{:?}", res);
 
-    add_participant_to_group_chat_room(connection, &chat_room_num_1_u_2).unwrap();
+    // add_participant_to_group_chat_room(connection, &chat_room_num_1_u_2).unwrap();
+    del_participant_to_group_chat_room(connection, &chat_room_num_1_u_2, 5).unwrap();
     // delete_group_chat_room(connection, &"silver finders".to_owned(), 5).unwrap();
 }

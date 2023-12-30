@@ -410,17 +410,8 @@ pub fn add_participant_to_group_chat_room(
     _conn: &mut PgConnection,
     _adding_user: &ChatRoomParticipants,
 ) -> Result<(), String> {
-    // checking the chat room is a group chat and not a private chat
-    let chat_room_info: Vec<ChatRooms> = chat_rooms
-        .filter(chat_rooms::chat_room_id.eq(_adding_user.chat_room_id))
-        .select(ChatRooms::as_returning())
-        .load(_conn)
-        .unwrap();
-
-    if chat_room_info.len() != 1 {
+    if !is_group_chat(_conn, _adding_user.chat_room_id) {
         return Err(format!("couldn't find the group chat room"));
-    } else if chat_room_info[0].room_name == "private room" {
-        return Err(format!("Found p2p chat room instead of the group chat"));
     }
 
     // checking if the user is not already in the group
@@ -451,8 +442,50 @@ pub fn add_participant_to_group_chat_room(
     Ok(())
 }
 
-pub fn del_participant_from_group_chat_room() {}
+pub fn del_participant_to_group_chat_room(
+    _conn: &mut PgConnection,
+    _removing_user: &ChatRoomParticipants,
+    remover_user_id: i32,
+) -> Result<(), String> {
+    if !is_group_chat(_conn, _removing_user.chat_room_id) {
+        return Err(format!("couldn't find the group chat room"));
+    }
 
+    // checking if the remover is the admin
+    // this will also check if the chat room id is a group chat room or not
+    if remover_user_id != get_group_owner_by_id(_conn, _removing_user.chat_room_id).unwrap() {
+        return Err(format!(
+            "user id {} is not allowed to remove users from group",
+            remover_user_id
+        ));
+    }
+    // checking if the user is in the group
+    let chat_room_info: Vec<ChatRoomParticipants> = chat_room_participants
+        .filter(
+            chat_room_participants::chat_room_id
+                .eq(_removing_user.chat_room_id)
+                .and(chat_room_participants::user_id.eq(_removing_user.user_id)),
+        )
+        .select(ChatRoomParticipants::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
+        return Err(format!(
+            "user id {} is not in the group chat room id {}",
+            _removing_user.user_id, _removing_user.chat_room_id
+        ));
+    }
+
+    // deleting the user from the participants table
+    diesel::delete(
+        chat_room_participants.filter(chat_room_participants::user_id.eq(_removing_user.user_id)),
+    )
+    .execute(_conn)
+    .unwrap();
+
+    Ok(())
+}
 pub fn add_new_message() {}
 
 pub fn del_message() {}
@@ -549,5 +582,21 @@ pub fn get_group_chat_id_by_name(
         return None;
     } else {
         return Some(_chat_room_id[0].chat_room_id);
+    }
+}
+
+pub fn is_group_chat(_conn: &mut PgConnection, _chat_room_id: i32) -> bool {
+    let chat_room_info: Vec<ChatRooms> = chat_rooms
+        .filter(chat_rooms::chat_room_id.eq(_chat_room_id))
+        .select(ChatRooms::as_returning())
+        .load(_conn)
+        .unwrap();
+
+    if chat_room_info.len() != 1 {
+        false
+    } else if chat_room_info[0].room_name == "private room" {
+        false
+    } else {
+        true
     }
 }
