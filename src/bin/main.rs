@@ -3,6 +3,7 @@
 #[macro_use]
 extern crate rocket; // imports all of the macros from the rocket crate
 
+use std::io::Read;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
@@ -14,7 +15,9 @@ use chatuza_db::db_models::*;
 use chatuza_db::db_models::*;
 use chatuza_db::*;
 // use rocket::data::FromDataSimple;
-use chatuza_db::*; // Assuming your Diesel models and functions are here
+use chatuza_db::wallet_lib::*;
+use chatuza_db::*;
+// Assuming your Diesel models and functions are here
 use diesel::prelude::*;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::request::Form;
@@ -25,8 +28,7 @@ use rocket::*;
 use rocket_contrib::json;
 use rocket_contrib::json::Json;
 use serde::Serialize;
-// use rocket::
-// getter api's //
+
 #[get("/user-via-username/<username>")]
 fn get_user_via_username(username: String) -> Json<QUsers> {
     let mut conn = establish_connection();
@@ -44,6 +46,7 @@ fn get_user_via_email(email: String) -> Json<QUsers> {
     let mut conn = establish_connection();
     Json(get_user_with_email(&mut conn, email.as_str()).unwrap())
 }
+
 #[get("/user-via-userid/<user_id>")]
 fn get_user_via_user_id(user_id: i32) -> Json<QUsers> {
     let mut conn = establish_connection();
@@ -61,6 +64,7 @@ fn get_chatroom_by_name(chatroom_name: String) -> Json<Vec<ChatRoomParticipants>
     let mut conn = establish_connection();
     Json(get_chat_room_participants_by_name(&mut conn, &chatroom_name).unwrap())
 }
+
 #[get("/group-owner/<owner_id>")]
 fn get_group_owner_via_id(owner_id: i32) -> Json<i32> {
     let mut conn = establish_connection();
@@ -78,6 +82,7 @@ fn validate_gp(chatroom_id: i32) -> Json<bool> {
     let mut conn = establish_connection();
     Json(is_group_chat(&mut conn, chatroom_id))
 }
+
 #[get("/is_valid_chatroom/<chatroom_id>")]
 fn validate_cr(chatroom_id: i32) -> Json<bool> {
     let mut conn = establish_connection();
@@ -101,6 +106,7 @@ fn get_all_user_groups(user_id: i32) -> Json<Vec<QChatRooms>> {
     let mut conn = establish_connection();
     Json(get_user_p2p_chat_rooms_by_user_id(&mut conn, user_id).unwrap())
 }
+
 #[get("/user_all_p2p/<user_id>")]
 fn get_all_user_p2p(user_id: i32) -> Json<Vec<QChatRooms>> {
     let mut conn = establish_connection();
@@ -160,6 +166,12 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
         )
         .unwrap(),
     )
+}
+
+#[post("/delete-user", data = "<username>")]
+fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
+    let mut conn = establish_connection();
+    Json(delete_user(&mut conn, username.username_in.clone()).unwrap())
 }
 
 #[post("/create-p2p", data = "<new_p2p_info>")]
@@ -305,10 +317,67 @@ fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
         .unwrap(),
     )
 }
-#[post("/delete-user", data = "<username>")]
-fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
+
+#[post("/delete-gp", data = "<new_gp_info>")]
+fn add_solana_wallet(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
     let mut conn = establish_connection();
-    Json(delete_user(&mut conn, username.username_in.clone()).unwrap())
+    Json(
+        delete_group_chat_room(
+            &mut conn,
+            &new_gp_info.chat_room_name_in.clone(),
+            &new_gp_info.remover_username_in.clone(),
+        )
+        .unwrap(),
+    )
+}
+#[post("/delete-gp", data = "<new_gp_info>")]
+fn add_tron_wallet(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
+    let mut conn = establish_connection();
+    Json(
+        delete_group_chat_room(
+            &mut conn,
+            &new_gp_info.chat_room_name_in.clone(),
+            &new_gp_info.remover_username_in.clone(),
+        )
+        .unwrap(),
+    )
+}
+#[get("/get-tron-addr_by_username/<username>")]
+fn get_tron_addr(username: String) -> Json<String> {
+    let mut conn = establish_connection();
+    let _user_id = get_user_with_username(&mut conn, &username)
+        .unwrap()
+        .user_id;
+
+    Json(
+        String::from_utf8_lossy(
+            get_user_tron_wallet(&mut conn, _user_id)
+                .unwrap()
+                .wallet_addr
+                .as_slice(),
+        )
+        .as_ref()
+        .to_string(),
+    )
+}
+
+#[get("/get-solana-addr_by_username/<username>")]
+fn get_solana_addr(username: String) -> Json<String> {
+    let mut conn = establish_connection();
+    let _user_id = get_user_with_username(&mut conn, &username)
+        .unwrap()
+        .user_id;
+
+    Json(
+        String::from_utf8_lossy(
+            get_user_solana_wallet(&mut conn, _user_id)
+                .unwrap()
+                .wallet_addr
+                .as_slice(),
+        )
+        .as_ref()
+        .to_string(),
+    )
 }
 
 #[catch(404)]
@@ -348,7 +417,9 @@ fn main() {
                 update_gp,
                 delete_gp,
                 add_user_to_gp,
-                delete_user_from_gp
+                delete_user_from_gp,
+                get_tron_addr,
+                get_solana_addr
             ],
         )
         // .attach(DbConn::fairing())
