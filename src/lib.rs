@@ -526,14 +526,54 @@ pub fn del_message(
 
     // checking the authority of the remover
     let message_info: Messages = get_message_by_id(_conn, _message_id).unwrap();
-    let group_owner = get_group_owner_by_id(_conn, message_info.chat_room_id)
-        .expect("group chat owner not found !");
-    assert!(group_owner == _remover_id);
+
+    if (is_group_chat(_conn, message_info.chat_room_id)) {
+        // its a group chat
+        let group_owner = get_group_owner_by_id(_conn, message_info.chat_room_id)
+            .expect("group chat owner not found !");
+        assert!(group_owner == _remover_id);
+    } else {
+        // its a p2p chat
+        assert!(message_info.sender_id == _remover_id);
+    }
 
     // deleting the message
     diesel::delete(messages.filter(messages::message_id.eq(_message_id)))
         .execute(_conn)
         .unwrap();
+
+    Ok(())
+}
+
+pub fn update_message(
+    _conn: &mut PgConnection,
+    _message_id: i32,
+    editor_user_id: i32,
+) -> Result<(), String> {
+    // getting the chat room id
+    assert!(is_valid_message(_conn, _message_id));
+
+    let message_info: Messages = get_message_by_id(_conn, _message_id).unwrap();
+
+    // checking if the editor is the admin
+    if editor_user_id != get_group_owner_by_id(_conn, _chat_room_id).unwrap() {
+        return Err(format!(
+            "user id {} is not allowed to edit the group info",
+            editor_user_id
+        ));
+    }
+
+    // updating the chat room info
+    diesel::update(chat_rooms.filter(chat_rooms::chat_room_id.eq(_chat_room_id)))
+        .set((
+            room_name.eq(&new_chat_room_info.room_name),
+            room_description.eq(&new_chat_room_info.room_description),
+        ))
+        .returning(QChatRooms::as_returning())
+        .get_result(_conn)
+        .expect("couldn't update the chat room info");
+
+    println!("updated the chat room id {} info", _chat_room_id);
 
     Ok(())
 }
