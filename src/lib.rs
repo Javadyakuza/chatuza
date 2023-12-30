@@ -324,7 +324,7 @@ pub fn delete_p2p_chat_room(
     _conn: &mut PgConnection,
     remover_username: &String,
     contact_username: &String,
-) -> Result<bool, String> {
+) -> Result<bool, Box<dyn std::error::Error>> {
     let _remover_id = get_user_with_username(_conn, remover_username)
         .unwrap()
         .user_id;
@@ -339,11 +339,6 @@ pub fn delete_p2p_chat_room(
     // checking the authority of the remover
     let participants = get_chat_room_participants_by_id(_conn, _chat_room_id)
         .expect(format!("no chat rooms with id {} found !", _chat_room_id).as_str());
-    if participants.len() != 2 {
-        return Err("didn't find a p2p chat with that chat room id".to_owned());
-    } else if participants[0].user_id != _remover_id && participants[1].user_id != _remover_id {
-        return Err("remover id doesn't have the authority to delete the chat room".to_owned());
-    }
 
     // deleting the users from the participants table
     for participant in participants.iter() {
