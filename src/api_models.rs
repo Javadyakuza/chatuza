@@ -67,7 +67,7 @@ pub struct NewGroupChatRoomIN {
 #[derive(FromForm, Debug, Serialize)]
 pub struct DeleteGroupChatRoomIN {
     pub chat_room_name_in: String,
-    pub remover_user_id_in: i32,
+    pub remover_username_in: String,
 }
 
 #[derive(FromForm, Debug, Serialize)]

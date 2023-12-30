@@ -222,6 +222,18 @@ fn update_gp(new_gp_info: Form<UpdatedGroupChatRoomInfoIN>) -> Json<QChatRooms> 
         .unwrap(),
     )
 }
+#[post("/delete-gp", data = "<new_gp_info>")]
+fn delete_gp(new_gp_info: Form<DeleteGroupChatRoomIN>) -> Json<bool> {
+    let mut conn = establish_connection();
+    Json(
+        delete_group_chat_room(
+            &mut conn,
+            &new_gp_info.chat_room_name_in.clone(),
+            &new_gp_info.remover_username_in.clone(),
+        )
+        .unwrap(),
+    )
+}
 #[post("/delete-user", data = "<username>")]
 fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
     let mut conn = establish_connection();
@@ -261,7 +273,8 @@ fn main() {
                 delete_user_via_username,
                 new_p2p,
                 new_gp,
-                update_gp
+                update_gp,
+                delete_gp
             ],
         )
         // .attach(DbConn::fairing())

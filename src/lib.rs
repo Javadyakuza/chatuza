@@ -468,9 +468,11 @@ pub fn update_group_chat_room_info(
 pub fn delete_group_chat_room(
     _conn: &mut PgConnection,
     _chat_room_name: &String,
-    remover_user_id: i32,
-) -> Result<(), String> {
-    // getting the chat room id
+    remover_username: &String,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let remover_user_id = get_user_with_username(_conn, remover_username)
+        .unwrap()
+        .user_id; // getting the chat room id
     let _chat_room_id = get_group_chat_by_name(_conn, _chat_room_name)
         .expect("couldn't find the group chat room")
         .chat_room_id;
@@ -478,10 +480,13 @@ pub fn delete_group_chat_room(
     // checking if the remover is the admin
     // this will also check if the chat room id is a group chat room or not
     if remover_user_id != get_group_owner_by_id(_conn, _chat_room_id).unwrap() {
-        return Err(format!(
-            "user id {} is not allowed to remove the group info",
-            remover_user_id
-        ));
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!(
+                "user id {} is not allowed to remove the group info",
+                remover_user_id
+            ),
+        )));
     }
     // deleting the members associated to the chat room group
     diesel::delete(
@@ -495,7 +500,7 @@ pub fn delete_group_chat_room(
         .execute(_conn)
         .unwrap();
 
-    Ok(())
+    Ok(true)
 }
 
 pub fn add_participant_to_group_chat_room(
