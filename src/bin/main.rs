@@ -162,6 +162,12 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
     )
 }
 
+#[post("/delete-user", data = "<username>")]
+fn delete_user_via_username(username: Form<SinglePostUsername>) -> Json<bool> {
+    let mut conn = establish_connection();
+    Json(delete_user(&mut conn, username.username_in.clone()).unwrap())
+}
+
 #[catch(404)]
 fn not_found(req: &Request) -> String {
     format!("Oh no the {} path doesn't exists !!", req.uri())

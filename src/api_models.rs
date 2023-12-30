@@ -30,6 +30,10 @@ pub struct UpdatedUserProfileIN {
     pub profile_picture_in: String,
 }
 
+#[derive(FromForm, Debug, Serialize)]
+pub struct SinglePostUsername {
+    pub username_in: String,
+}
 // delete user only takes one arg //
 
 // get user with username takes only one argument //
