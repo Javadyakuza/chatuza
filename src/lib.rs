@@ -366,28 +366,29 @@ pub fn delete_p2p_chat_room(
 pub fn add_new_group_chat_room(
     _conn: &mut PgConnection,
     _chat_room_info: &ChatRooms,
-    group_owner_id: i32,
-    group_members: Vec<&mut ChatRoomParticipants>,
-) -> Result<i32, String> {
-    // checking the owner existence
-    if let None = get_user_with_user_id(_conn, group_owner_id) {
-        return Err(format!("user id {} doesn't exits", group_owner_id));
-    }
+    group_owner_username: &String,
+    group_members: Vec<String>,
+) -> Result<QChatRooms, Error> {
+    let group_owner_id = get_user_with_username(_conn, group_owner_username)
+        .expect("group owner provided username didn't found")
+        .user_id;
 
     // creating the chat room
-    let new_chat_room_id = diesel::insert_into(chat_rooms)
+    let new_chat_room = diesel::insert_into(chat_rooms)
         .values(_chat_room_info)
         .returning(QChatRooms::as_returning())
         .get_result(_conn)
-        .unwrap()
-        .chat_room_id;
+        .unwrap();
 
-    println!("new group chat room add, \n  id : {}", new_chat_room_id);
+    println!(
+        "new group chat room add, \n  id : {}",
+        new_chat_room.chat_room_id
+    );
 
     // adding the owner to the participants
     let owner = ChatRoomParticipants {
         user_id: group_owner_id,
-        chat_room_id: new_chat_room_id,
+        chat_room_id: new_chat_room.chat_room_id,
         is_admin: true,
     };
     let _ = diesel::insert_into(chat_room_participants)
@@ -398,30 +399,35 @@ pub fn add_new_group_chat_room(
 
     println!(
         "added the user id {} to the group chat room id {} as the owner",
-        group_owner_id, new_chat_room_id
+        group_owner_id, new_chat_room.chat_room_id
     );
 
     // adding members if any specified
     if group_members.len() > 0 {
-        let group_members: Vec<ChatRoomParticipants> = group_members
-            .iter()
-            .filter(|member| member.user_id != group_owner_id)
-            .map(|member| ChatRoomParticipants {
-                user_id: member.user_id,
-                chat_room_id: new_chat_room_id,
-                is_admin: false,
-            })
-            .collect();
-        let _ = diesel::insert_into(chat_room_participants::table)
-            .values(&group_members)
-            .returning(ChatRoomParticipants::as_returning())
-            .get_result(_conn)
-            .unwrap();
+        let mut group_members_up: Vec<ChatRoomParticipants> = Vec::new();
+        for member in group_members {
+            if get_user_with_username(_conn, member.as_str())
+                .unwrap()
+                .user_id
+                != group_owner_id
+            {
+                group_members_up.push(ChatRoomParticipants {
+                    user_id: get_user_with_username(_conn, member.as_str())
+                        .unwrap()
+                        .user_id,
+                    chat_room_id: new_chat_room.chat_room_id,
+                    is_admin: false,
+                });
+            }
+            let _ = diesel::insert_into(chat_room_participants::table)
+                .values(&group_members_up)
+                .returning(ChatRoomParticipants::as_returning())
+                .get_result(_conn)
+                .unwrap();
+        }
     }
-
-    Ok(new_chat_room_id)
+    Ok(new_chat_room)
 }
-
 pub fn update_group_chat_room_info(
     _conn: &mut PgConnection,
     old_chat_room_name: &String,

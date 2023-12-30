@@ -18,12 +18,12 @@ use chatuza_db::*; // Assuming your Diesel models and functions are here
 use diesel::prelude::*;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::request::Form;
+use rocket::request::FormItem;
 use rocket::request::{FromRequest, Request};
 use rocket::State;
 use rocket::*;
 use rocket_contrib::json;
 use rocket_contrib::json::Json;
-use rocket_contrib::templates::Template;
 use serde::Serialize;
 // use rocket::
 // getter api's //
@@ -162,17 +162,17 @@ fn update_user_profile_api(new_profile: Form<UpdatedUserProfileIN>) -> Json<User
     )
 }
 
-#[post("/create-p2p", data = "<new_p2p_data>")]
-fn new_p2p(new_p2p_data: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
+#[post("/create-p2p", data = "<new_p2p_info>")]
+fn new_p2p(new_p2p_info: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
     let mut conn = establish_connection();
     let req_user = get_user_with_username(
         &mut conn,
-        new_p2p_data.requestor_username_in.clone().as_str(),
+        new_p2p_info.requestor_username_in.clone().as_str(),
     )
     .unwrap();
     let acc_user = get_user_with_username(
         &mut conn,
-        new_p2p_data.acceptor_username_in.clone().as_str(),
+        new_p2p_info.acceptor_username_in.clone().as_str(),
     )
     .unwrap();
 
@@ -181,7 +181,26 @@ fn new_p2p(new_p2p_data: Form<NewP2PChatRoomIN>) -> Json<QChatRooms> {
             &mut conn,
             req_user.user_id,
             acc_user.user_id,
-            new_p2p_data.chat_room_pubkey_in.clone(),
+            new_p2p_info.chat_room_pubkey_in.clone(),
+        )
+        .unwrap(),
+    )
+}
+
+#[post("/create-gp", data = "<new_gp_info>")]
+fn new_gp(new_gp_info: Json<NewGroupChatRoomIN>) -> Json<QChatRooms> {
+    let mut conn = establish_connection();
+
+    Json(
+        add_new_group_chat_room(
+            &mut conn,
+            &ChatRooms {
+                room_name: new_gp_info.room_name_in.clone(),
+                room_description: new_gp_info.room_description_in.clone(),
+                chat_room_pubkey: new_gp_info.chat_room_pubkey.as_bytes().to_vec(),
+            },
+            &(new_gp_info.group_owner_username_in.clone()),
+            new_gp_info.group_members_in.to_owned(),
         )
         .unwrap(),
     )
@@ -224,7 +243,8 @@ fn main() {
                 update_user_conditionals,
                 update_user_profile_api,
                 delete_user_via_username,
-                new_p2p
+                new_p2p,
+                new_gp
             ],
         )
         // .attach(DbConn::fairing())

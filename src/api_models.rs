@@ -2,9 +2,10 @@
 use rocket::request::Form;
 use rocket::*;
 
-use serde::Serialize;
-
 use crate::*;
+// use rocket_contrib::json;
+use rocket_contrib::json::Json;
+use serde::{Deserialize, Serialize};
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct NewUserIN {
@@ -48,19 +49,19 @@ pub struct NewP2PChatRoomIN {
     pub acceptor_username_in: String,
     pub chat_room_pubkey_in: String,
 }
-
 #[derive(FromForm, Debug, Serialize)]
 pub struct DeleteP2PChatRoomIN {
     pub chat_room_id_in: i32,
     pub remover_user_id_in: i32,
 }
 
-#[derive(FromForm, Debug, Serialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize)]
 pub struct NewGroupChatRoomIN {
     pub room_name_in: String,
     pub room_description_in: String,
-    pub group_owner_id_in: i32,
-    pub group_members_in: String, // then will be converted to the array of the chat room participants instance
+    pub group_owner_username_in: String,
+    pub group_members_in: Vec<String>,
+    pub chat_room_pubkey: String,
 }
 
 #[derive(FromForm, Debug, Serialize)]
