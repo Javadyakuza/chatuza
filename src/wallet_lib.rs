@@ -11,10 +11,10 @@ pub use std::env;
 
 pub fn initialize_new_tron_wallet(
     _conn: &mut PgConnection,
-    new_wallet_info: &TronWallet,
+    _new_wallet_info: &TronWallet,
 ) -> Result<QTronWallet, Box<dyn std::error::Error>> {
     // Checking if user already has a wallet
-    if get_user_tron_wallet(_conn, new_wallet_info.user_id).is_ok() {
+    if get_user_tron_wallet(_conn, _new_wallet_info.user_id).is_ok() {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             "User already has a wallet".to_owned(),
@@ -22,34 +22,40 @@ pub fn initialize_new_tron_wallet(
     }
 
     // Checking if user ID is valid
-    if !is_valid_user(_conn, new_wallet_info.user_id) {
+    if !is_valid_user(_conn, _new_wallet_info.user_id) {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             "Invalid user ID provided".to_owned(),
         )));
     }
 
-    let new_wallet_info: QTronWallet = diesel::insert_into(tron_wallets::table)
-        .values(new_wallet_info)
+    let new_wallet_info: QTronWallet;
+    match diesel::insert_into(tron_wallets::table)
+        .values(_new_wallet_info)
         .returning(QTronWallet::as_returning())
         .get_result(_conn)
-        .expect(
-            format!(
-                "Couldn't initialize a Tron wallet for user ID {}",
-                new_wallet_info.user_id
-            )
-            .as_str(),
-        );
-
-    Ok(new_wallet_info)
+    {
+        Ok(res) => Ok(res),
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!(
+                    "Couldn't initialize a Tron wallet for user ID {} \n
+                    Error: {:?}",
+                    &_new_wallet_info.user_id, e
+                )
+                .as_str(),
+            )))
+        }
+    }
 }
 
 pub fn initialize_new_solana_wallet(
     _conn: &mut PgConnection,
-    new_wallet_info: &SolanaWallet,
+    _new_wallet_info: &SolanaWallet,
 ) -> Result<QSolanaWallet, Box<dyn std::error::Error>> {
     // Checking if user already has a wallet
-    if get_user_solana_wallet(_conn, new_wallet_info.user_id).is_ok() {
+    if get_user_solana_wallet(_conn, _new_wallet_info.user_id).is_ok() {
         return Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::AlreadyExists,
             "User already has a wallet".to_owned(),
@@ -57,26 +63,31 @@ pub fn initialize_new_solana_wallet(
     }
 
     // Checking if user ID is valid
-    if !is_valid_user(_conn, new_wallet_info.user_id) {
+    if !is_valid_user(_conn, _new_wallet_info.user_id) {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
+            std::io::ErrorKind::InvalidData,
             "Invalid user ID provided".to_owned(),
         )));
     }
 
-    let new_wallet_info: QSolanaWallet = diesel::insert_into(solana_wallets::table)
-        .values(new_wallet_info)
+    match diesel::insert_into(solana_wallets::table)
+        .values(_new_wallet_info)
         .returning(QSolanaWallet::as_returning())
         .get_result(_conn)
-        .expect(
-            format!(
-                "Couldn't initialize a Solana wallet for user ID {}",
-                new_wallet_info.user_id
-            )
-            .as_str(),
-        );
-
-    Ok(new_wallet_info)
+    {
+        Ok(res) => Ok(res),
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!(
+                    "Couldn't initialize a Solana wallet for user ID {} \n
+                        Error: {:?}",
+                    &_new_wallet_info.user_id, e
+                )
+                .as_str(),
+            )))
+        }
+    }
 }
 
 pub fn delete_tron_wallet(
@@ -93,11 +104,23 @@ pub fn delete_tron_wallet(
             )))
         }
     } // checking if it exist before or no.
-    diesel::delete(tron_wallets.filter(tron_wallets::user_id.eq(_user_id_removable)))
-        .execute(_conn)
-        .expect("couldn't delete user tron wallet");
 
-    Ok(true)
+    match diesel::delete(tron_wallets.filter(tron_wallets::user_id.eq(_user_id_removable)))
+        .execute(_conn)
+    {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!(
+                    "Couldn't delete the Tron wallet for user ID {} \n
+                    Error: {:?}",
+                    &_user_id_removable, e
+                )
+                .as_str(),
+            )))
+        }
+    }
 }
 
 pub fn delete_solana_wallet(
@@ -114,10 +137,22 @@ pub fn delete_solana_wallet(
             )))
         }
     }
-    diesel::delete(solana_wallets.filter(solana_wallets::user_id.eq(_user_id_removable)))
+    match diesel::delete(solana_wallets.filter(solana_wallets::user_id.eq(_user_id_removable)))
         .execute(_conn)
-        .expect("couldn't delete user solana wallet");
-    Ok(true)
+    {
+        Ok(_) => Ok(true),
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!(
+                    "Couldn't delete the Solana wallet for user ID {} \n
+                        Error: {:?}",
+                    &_user_id_removable, e
+                )
+                .as_str(),
+            )))
+        }
+    }
 }
 
 pub fn get_user_tron_wallet(
