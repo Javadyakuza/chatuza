@@ -24,8 +24,8 @@ pub fn initialize_new_tron_wallet(
     // Checking if user ID is valid
     if !is_valid_user(_conn, _new_wallet_info.user_id) {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
-            "Invalid user ID provided".to_owned(),
+            std::io::ErrorKind::NotFound,
+            format!("user id {} not found !", _new_wallet_info.user_id),
         )));
     }
 
@@ -65,8 +65,8 @@ pub fn initialize_new_solana_wallet(
     // Checking if user ID is valid
     if !is_valid_user(_conn, _new_wallet_info.user_id) {
         return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            "Invalid user ID provided".to_owned(),
+            std::io::ErrorKind::NotFound,
+            format!("user id {} not found !", _new_wallet_info.user_id),
         )));
     }
 
