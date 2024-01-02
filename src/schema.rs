@@ -58,6 +58,8 @@ diesel::table! {
         email -> Varchar,
         #[max_length = 255]
         password -> Varchar,
+        #[max_length = 15]
+        phone_number -> Varchar,
     }
 }
 

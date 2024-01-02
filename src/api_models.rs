@@ -8,6 +8,7 @@ pub struct NewUserIN {
     pub username_in: String,
     pub email_in: String,
     pub password_in: String,
+    pub phone_number_in: String,
     pub bio_in: Option<String>,
     pub profile_picture_in: Option<String>,
 }
@@ -18,6 +19,7 @@ pub struct UpdatedUserCreditsIN {
     pub username_in: String,
     pub email_in: String,
     pub password_in: String,
+    pub phone_number_in: String,
 }
 
 #[derive(FromForm, Debug, Serialize)]

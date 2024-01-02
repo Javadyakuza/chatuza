@@ -137,6 +137,7 @@ fn new_user(new_user: Form<NewUserIN>) -> Json<Result<QUsers, String>> {
             username: new_user.username_in.clone(),
             email: new_user.email_in.clone(),
             password: new_user.password_in.clone(),
+            phone_number: new_user.phone_number_in.clone(),
         },
         &mut UserProfiles {
             user_id: 0,
@@ -161,6 +162,7 @@ fn update_user_conditionals(
             username: new_credits.username_in.clone(),
             email: new_credits.email_in.clone(),
             password: new_credits.password_in.clone(),
+            phone_number: new_credits.phone_number_in.clone(),
         },
     ) {
         Ok(res) => return Json(Ok(res)),

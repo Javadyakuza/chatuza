@@ -98,22 +98,6 @@ pub fn update_user_credits(
         }
     }
 
-    // checking for the duplicated username
-
-    if get_user_with_username(conn, &new_user_credits.username).is_ok() {
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
-            "username already exists !",
-        )));
-    }
-
-    if get_user_with_email(conn, &new_user_credits.email).is_ok() {
-        return Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
-            "email already exists !",
-        )));
-    }
-
     match diesel::update(users.filter(users::user_id.eq(user_info.user_id)))
         .set((
             username.eq(&new_user_credits.username),

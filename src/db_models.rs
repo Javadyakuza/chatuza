@@ -12,6 +12,7 @@ pub struct Users {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub phone_number: String,
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable, PartialEq)]
