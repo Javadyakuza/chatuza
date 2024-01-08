@@ -2,6 +2,7 @@
 use rocket::*;
 
 use serde::{Deserialize, Serialize};
+use solana_sdk::pubkey::Pubkey;
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct NewUserIN {
@@ -32,6 +33,13 @@ pub struct UpdatedUserProfileIN {
 #[derive(FromForm, Debug, Serialize)]
 pub struct SinglePostUsername {
     pub username_in: String,
+}
+#[derive(FromForm, Debug, Serialize)]
+pub struct CreateTokenAccount {
+    pub wallet_address: String,
+    pub token_mint_address: String,
+    pub token_program_id: String,
+    pub lbh: String,
 }
 // delete user only takes one arg //
 

@@ -1,3 +1,4 @@
+use crate::api_models::CreateTokenAccount;
 use crate::db_models::{QSolanaWallet, SolanaWallet};
 use crate::schema::solana_wallets;
 use crate::schema::solana_wallets::dsl::*;
@@ -8,12 +9,14 @@ pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
 use solana_client::rpc_client::RpcClient;
+use solana_sdk::hash::Hash;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::signature::Keypair;
+use solana_sdk::signature::{Keypair, Signature};
 use solana_sdk::signer::{EncodableKey, Signer};
 use solana_sdk::transaction::Transaction;
 use spl_associated_token_account::instruction::create_associated_token_account;
 pub use std::env;
+use std::str::FromStr;
 
 pub fn initialize_new_solana_wallet(
     _conn: &mut PgConnection,
@@ -108,25 +111,27 @@ pub fn get_user_solana_wallet(
 }
 
 pub fn create_token_account(
-    wallet_address: &Pubkey,
-    token_mint_address: &Pubkey,
-    token_program_id: &Pubkey,
-    lbh: solana_sdk::hash::Hash,
-) {
+    token_account_info: &CreateTokenAccount,
+) -> Result<Signature, Box<dyn std::error::Error>> {
     let kp = Keypair::read_from_file("/sec.json").unwrap();
     let pk = kp.try_pubkey().unwrap();
     let rpc = RpcClient::new("https://api.devnet.solana.com".to_string());
 
-    rpc.send_and_confirm_transaction(&Transaction::new_signed_with_payer(
+    match rpc.send_and_confirm_transaction(&Transaction::new_signed_with_payer(
         &[create_associated_token_account(
             &pk,
-            &wallet_address,
-            &token_mint_address,
-            &token_program_id,
+            &Pubkey::from_str(token_account_info.wallet_address.as_str()).unwrap(),
+            &Pubkey::from_str(token_account_info.token_mint_address.as_str()).unwrap(),
+            &Pubkey::from_str(token_account_info.token_program_id.as_str()).unwrap(),
         )],
         Some(&pk),
         &[&kp],
-        lbh,
-    ))
-    .unwrap();
+        Hash::from_str(token_account_info.lbh.as_str()).unwrap(),
+    )) {
+        Ok(sig) => Ok(sig),
+        Err(e) => Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("{}", e),
+        ))),
+    }
 }
