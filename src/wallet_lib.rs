@@ -7,6 +7,12 @@ pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
 pub use diesel::result::Error;
 pub use dotenvy::dotenv;
+use solana_client::rpc_client::RpcClient;
+use solana_sdk::pubkey::Pubkey;
+use solana_sdk::signature::Keypair;
+use solana_sdk::signer::{EncodableKey, Signer};
+use solana_sdk::transaction::Transaction;
+use spl_associated_token_account::instruction::create_associated_token_account;
 pub use std::env;
 
 pub fn initialize_new_solana_wallet(
@@ -99,4 +105,28 @@ pub fn get_user_solana_wallet(
             format!("user id {} doesn't have a solana wallet ", _user_id),
         )))
     }
+}
+
+pub fn create_token_account(
+    wallet_address: &Pubkey,
+    token_mint_address: &Pubkey,
+    token_program_id: &Pubkey,
+    lbh: solana_sdk::hash::Hash,
+) {
+    let kp = Keypair::read_from_file("/sec.json").unwrap();
+    let pk = kp.try_pubkey().unwrap();
+    let rpc = RpcClient::new("https://api.devnet.solana.com".to_string());
+
+    rpc.send_and_confirm_transaction(&Transaction::new_signed_with_payer(
+        &[create_associated_token_account(
+            &pk,
+            &wallet_address,
+            &token_mint_address,
+            &token_program_id,
+        )],
+        Some(&pk),
+        &[&kp],
+        lbh,
+    ))
+    .unwrap();
 }

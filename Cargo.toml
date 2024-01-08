@@ -26,6 +26,9 @@ serde_json = "1.0.108"
 struct_iterable = "0.1.1"
 rocket = "0.4.5"
 base64 = "0.21.5"
+solana-client = "1.17.14"
+solana-sdk = "1.17.14"
+spl-associated-token-account = "2.3.0"
 
 [dependencies.rocket_contrib]
 version = "0.4.5"
