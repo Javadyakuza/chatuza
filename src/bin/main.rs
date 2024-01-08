@@ -10,6 +10,7 @@ use rocket::request::Form;
 use rocket::request::Request;
 use rocket::*;
 use rocket_contrib::json::Json;
+use solana_sdk::signature::Signature;
 
 #[get("/user-via-username/<username>")]
 fn get_user_via_username(username: String) -> Json<Result<QUsers, String>> {
@@ -391,23 +392,16 @@ fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<Result<QSolanaW
     }
 }
 
-#[post("/add-solana-wallet", data = "<new_wallet_info>")]
-fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<Result<QSolanaWallet, String>> {
-    let mut conn = establish_connection();
-
-    let _user_id;
-    match get_user_with_username(&mut conn, &new_wallet_info.username_in) {
-        Ok(res) => _user_id = res.user_id,
-        Err(e) => return Json(Err(format!("{}", e))),
-    }
-    match initialize_new_solana_wallet(
-        &mut conn,
-        &SolanaWallet {
-            user_id: _user_id,
-            wallet_addr: new_wallet_info.wallet_addr_in.as_bytes().to_vec(),
-            wallet_backup: new_wallet_info.wallet_backup_in.as_bytes().to_vec(),
-        },
-    ) {
+#[post("/create-token-wallet", data = "<new_wallet_info>")]
+fn create_token_account_api(
+    new_wallet_info: Form<CreateTokenAccount>,
+) -> Json<Result<Signature, String>> {
+    match create_token_account(&CreateTokenAccount {
+        wallet_address: new_wallet_info.wallet_address.clone(),
+        token_mint_address: new_wallet_info.token_mint_address.clone(),
+        token_program_id: new_wallet_info.token_program_id.clone(),
+        lbh: new_wallet_info.lbh.clone(),
+    }) {
         Ok(res) => Json(Ok(res)),
         Err(e) => return Json(Err(format!("{}", e))),
     }
@@ -469,6 +463,7 @@ fn main() {
                 delete_user_from_gp,
                 get_solana_addr,
                 add_solana_wallet,
+                create_token_account_api
             ],
         )
         // .attach(DbConn::fairing())
