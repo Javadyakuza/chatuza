@@ -13,6 +13,7 @@ use solana_sdk::hash::Hash;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::{Keypair, Signature};
 use solana_sdk::signer::{EncodableKey, Signer};
+use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::Transaction;
 use spl_associated_token_account::instruction::create_associated_token_account;
 pub use std::env;
@@ -112,8 +113,9 @@ pub fn get_user_solana_wallet(
 
 pub fn create_token_account(
     token_account_info: &CreateTokenAccount,
-) -> Result<Signature, Box<dyn std::error::Error>> {
-    let kp = Keypair::read_from_file("/sec.json").unwrap();
+) -> Result<[Signature; 2], Box<dyn std::error::Error>> {
+    let kp =
+        Keypair::read_from_file("/home/javad/Desktop/chatuza_all/chatuza_db/sec.json").unwrap();
     let pk = kp.try_pubkey().unwrap();
     let rpc = RpcClient::new("https://api.devnet.solana.com".to_string());
 
@@ -128,10 +130,32 @@ pub fn create_token_account(
         &[&kp],
         Hash::from_str(token_account_info.lbh.as_str()).unwrap(),
     )) {
-        Ok(sig) => Ok(sig),
-        Err(e) => Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            format!("{}", e),
-        ))),
+        Ok(sig) => {
+            println!("sig {:?}", sig);
+            // funding the account
+            match rpc.send_and_confirm_transaction(&Transaction::new_signed_with_payer(
+                &[transfer(
+                    &pk,
+                    &Pubkey::from_str(token_account_info.wallet_address.as_str()).unwrap(),
+                    1_000_000,
+                )],
+                Some(&pk),
+                &[&kp],
+                Hash::from_str(token_account_info.lbh.as_str()).unwrap(),
+            )) {
+                Ok(sig2) => Ok([sig, sig2]),
+                Err(e2) => Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("{}", e2),
+                ))),
+            }
+        }
+        Err(e) => {
+            println!("err {}", e);
+            Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("{}", e),
+            )))
+        }
     }
 }

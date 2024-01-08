@@ -392,10 +392,10 @@ fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<Result<QSolanaW
     }
 }
 
-#[post("/create-token-wallet", data = "<new_wallet_info>")]
+#[post("/create-token-account", data = "<new_wallet_info>")]
 fn create_token_account_api(
     new_wallet_info: Form<CreateTokenAccount>,
-) -> Json<Result<Signature, String>> {
+) -> Json<Result<[Signature; 2], String>> {
     match create_token_account(&CreateTokenAccount {
         wallet_address: new_wallet_info.wallet_address.clone(),
         token_mint_address: new_wallet_info.token_mint_address.clone(),
