@@ -5,11 +5,9 @@ pub mod schema;
 pub mod wallet_lib;
 
 use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
-use crate::schema::{
-    chat_room_participants, chat_rooms, solana_wallets, tron_wallets, user_profiles, users,
-};
+use crate::schema::{chat_room_participants, chat_rooms, solana_wallets, user_profiles, users};
 use chrono::Local;
-use db_models::{QChatRooms, QSolanaWallet, QTronWallet, UpdatableChatRooms};
+use db_models::{QChatRooms, QSolanaWallet, UpdatableChatRooms};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
@@ -17,9 +15,9 @@ pub use diesel::result::Error;
 pub use dotenvy::dotenv;
 use schema::{
     chat_room_participants::dsl::*, chat_rooms::dsl::*, solana_wallets::dsl::*,
-    tron_wallets::dsl::*, user_profiles::dsl::*, users::dsl::*,
+    user_profiles::dsl::*, users::dsl::*,
 };
-use wallet_lib::{delete_solana_wallet, delete_tron_wallet};
+use wallet_lib::delete_solana_wallet;
 
 pub use std::env;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -204,21 +202,12 @@ pub fn delete_user(
         )));
     }
     // checking if the user has any wallets created and deleting them
-    let _tron_wallets = tron_wallets
-        .filter(tron_wallets::user_id.eq(_user_id))
-        .select(QTronWallet::as_select())
-        .load(conn)
-        .unwrap_or(vec![]);
 
     let _solana_wallets = solana_wallets
         .filter(solana_wallets::user_id.eq(_user_id))
         .select(QSolanaWallet::as_select())
         .load(conn)
         .unwrap_or(vec![]);
-
-    if _tron_wallets.len() as u32 == 1 {
-        delete_tron_wallet(conn, _username).unwrap();
-    }
 
     if _solana_wallets.len() as u32 == 1 {
         delete_solana_wallet(conn, _username).unwrap();
