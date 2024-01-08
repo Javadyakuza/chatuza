@@ -30,15 +30,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    tron_wallets (wallet_id) {
-        wallet_id -> Int4,
-        user_id -> Int4,
-        wallet_backup -> Bytea,
-        wallet_addr -> Bytea,
-    }
-}
-
-diesel::table! {
     user_profiles (user_profile_id) {
         user_profile_id -> Int4,
         user_id -> Int4,
@@ -71,7 +62,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     chat_room_participants,
     chat_rooms,
     solana_wallets,
-    tron_wallets,
     user_profiles,
     users,
 );

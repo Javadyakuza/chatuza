@@ -1,0 +1,1 @@
+DROP TABLE tron_wallets;
