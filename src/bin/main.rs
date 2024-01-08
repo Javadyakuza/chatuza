@@ -390,41 +390,6 @@ fn add_solana_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<Result<QSolanaW
         Err(e) => return Json(Err(format!("{}", e))),
     }
 }
-#[post("/add-tron-wallet", data = "<new_wallet_info>")]
-fn add_tron_wallet(new_wallet_info: Form<NewWalletIn>) -> Json<Result<QTronWallet, String>> {
-    let mut conn = establish_connection();
-    let _user_id;
-    match get_user_with_username(&mut conn, &new_wallet_info.username_in) {
-        Ok(res) => _user_id = res.user_id,
-        Err(e) => return Json(Err(format!("{}", e))),
-    }
-    match initialize_new_tron_wallet(
-        &mut conn,
-        &TronWallet {
-            user_id: _user_id,
-            wallet_addr: new_wallet_info.wallet_addr_in.as_bytes().to_vec(),
-            wallet_backup: new_wallet_info.wallet_backup_in.as_bytes().to_vec(),
-        },
-    ) {
-        Ok(res) => Json(Ok(res)),
-        Err(e) => return Json(Err(format!("{}", e))),
-    }
-}
-#[get("/get-tron-addr-by-username/<username>")]
-fn get_tron_addr(username: String) -> Json<Result<String, String>> {
-    let mut conn = establish_connection();
-    let _user_id;
-    match get_user_with_username(&mut conn, &username) {
-        Ok(res) => _user_id = res.user_id,
-        Err(e) => return Json(Err(format!("{}", e))),
-    }
-    match get_user_tron_wallet(&mut conn, _user_id) {
-        Ok(res) => Json(Ok(String::from_utf8_lossy(res.wallet_addr.as_slice())
-            .as_ref()
-            .to_string())),
-        Err(e) => return Json(Err(format!("{}", e))),
-    }
-}
 
 #[get("/get-solana-addr-by-username/<username>")]
 fn get_solana_addr(username: String) -> Json<Result<String, String>> {
@@ -480,10 +445,8 @@ fn main() {
                 delete_gp,
                 add_user_to_gp,
                 delete_user_from_gp,
-                get_tron_addr,
                 get_solana_addr,
                 add_solana_wallet,
-                add_tron_wallet
             ],
         )
         // .attach(DbConn::fairing())
