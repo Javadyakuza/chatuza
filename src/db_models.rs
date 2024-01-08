@@ -55,15 +55,6 @@ pub struct ChatRoomParticipants {
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
-#[diesel(table_name = crate::schema::tron_wallets)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct TronWallet {
-    pub user_id: i32,
-    pub wallet_addr: Vec<u8>,
-    pub wallet_backup: Vec<u8>,
-}
-
-#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
 #[diesel(table_name = crate::schema::solana_wallets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct SolanaWallet {
@@ -130,15 +121,3 @@ pub struct QSolanaWallet {
     pub user_id: i32,
     pub wallet_addr: Vec<u8>,
 }
-
-#[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
-#[diesel(table_name = crate::schema::tron_wallets)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct QTronWallet {
-    pub wallet_id: i32,
-    pub user_id: i32,
-    pub wallet_addr: Vec<u8>,
-}
-
-// the following structs are the rocket compatible versions to be returned to the user
-// the rocket does not supports the
