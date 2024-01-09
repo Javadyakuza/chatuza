@@ -41,6 +41,11 @@ pub struct CreateTokenAccount {
     pub token_program_id: String,
     pub lbh: String,
 }
+#[derive(Deserialize, Serialize, Debug)]
+pub struct CreateTokenAccountResponse {
+    pub signatures: Vec<String>,
+}
+
 // delete user only takes one arg //
 
 // get user with username takes only one argument //
