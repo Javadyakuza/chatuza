@@ -35,6 +35,11 @@ pub struct SinglePostUsername {
     pub username_in: String,
 }
 #[derive(FromForm, Debug, Serialize)]
+pub struct FundWalletIn {
+    pub wallet_address: String,
+}
+
+#[derive(FromForm, Debug, Serialize)]
 pub struct CreateTokenAccount {
     pub wallet_address: String,
     pub token_mint_address: String,

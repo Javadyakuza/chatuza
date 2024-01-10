@@ -406,6 +406,13 @@ fn create_token_account_api(
         Err(e) => return Json(Err(format!("{}", e))),
     }
 }
+#[post("/fund-wallet", data = "<wallet_address>")]
+fn fund_wallet(wallet_address: Form<FundWalletIn>) -> Json<Result<String, String>> {
+    match activate_wallet_account_for_transfer(wallet_address.wallet_address.clone()) {
+        Ok(res) => Json(Ok(res)),
+        Err(e) => return Json(Err(format!("{}", e))),
+    }
+}
 
 #[get("/get-solana-addr-by-username/<username>")]
 fn get_solana_addr(username: String) -> Json<Result<String, String>> {
@@ -463,7 +470,8 @@ fn main() {
                 delete_user_from_gp,
                 get_solana_addr,
                 add_solana_wallet,
-                create_token_account_api
+                create_token_account_api,
+                fund_wallet
             ],
         )
         // .attach(DbConn::fairing())

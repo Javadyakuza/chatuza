@@ -162,3 +162,40 @@ pub fn create_token_account(
         ))),
     }
 }
+
+// we activate the the account of the user in exchange of some transferable spl token if not activated before
+pub fn activate_wallet_account_for_transfer(
+    wallet_pubkey: String,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let kp =
+        Keypair::read_from_file("/home/javad/Desktop/chatuza_all/chatuza_db/sec.json").unwrap();
+    let pk: Pubkey = kp.try_pubkey().unwrap();
+    let rpc = RpcClient::new("https://api.devnet.solana.com".to_string());
+    let recipient_pk: Pubkey = Pubkey::from_str(wallet_pubkey.as_str()).unwrap(); // panic impossible
+    let lbh: Hash;
+    match rpc.get_latest_blockhash() {
+        Ok(_lbh) => lbh = _lbh,
+        Err(e) => {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("couldn't fetch the latest block hash due to \n {}", e),
+            )))
+        }
+    }
+    match rpc.send_and_confirm_transaction(&Transaction::new_signed_with_payer(
+        &[solana_sdk::system_instruction::transfer(
+            &pk,
+            &recipient_pk,
+            100_000_000,
+        )],
+        Some(&pk),
+        &[&kp],
+        lbh,
+    )) {
+        Ok(sig) => Ok(sig.to_string()),
+        Err(e) => Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!(" couldn't fund the recipient due to \n {}", e),
+        ))),
+    }
+}
