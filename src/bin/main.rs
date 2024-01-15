@@ -130,7 +130,7 @@ fn get_all_user_groups(user_id: i32) -> Json<Result<Vec<QChatRooms>, String>> {
 }
 
 #[post("/create-user", data = "<new_user>")]
-fn new_user(new_user: Form<NewUserIN>) -> Json<Result<QUsers, String>> {
+fn new_user(new_user: Form<NewUserIN>) -> Json<Result<QUsersResponse, String>> {
     let mut conn = establish_connection();
     match add_new_user(
         &mut conn,

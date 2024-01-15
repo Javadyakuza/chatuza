@@ -7,7 +7,7 @@ pub mod wallet_lib;
 use crate::db_models::{ChatRoomParticipants, ChatRooms, QUsers, UserProfiles, Users};
 use crate::schema::{chat_room_participants, chat_rooms, solana_wallets, user_profiles, users};
 use chrono::Local;
-use db_models::{QChatRooms, QSolanaWallet, UpdatableChatRooms};
+use db_models::{QChatRooms, QSolanaWallet, QUsersResponse, UpdatableChatRooms};
 pub use diesel;
 pub use diesel::pg::PgConnection;
 pub use diesel::prelude::*;
@@ -36,8 +36,9 @@ pub fn add_new_user(
     conn: &mut PgConnection,
     user_credits: &Users,
     user_profile: &mut UserProfiles,
-) -> Result<QUsers, Box<dyn std::error::Error>> {
+) -> Result<QUsersResponse, Box<dyn std::error::Error>> {
     // inserting user credits
+    // db avoids the duplicated values
     if let Err(e) = diesel::insert_into(users::table)
         .values(user_credits)
         .returning(Users::as_returning())
@@ -70,7 +71,18 @@ pub fn add_new_user(
         .returning(UserProfiles::as_returning())
         .get_result(conn)
     {
-        Ok(_) => Ok(user_info),
+        Ok(_) => Ok(QUsersResponse {
+            user_id: user_info.user_id,
+            username: user_info.username,
+            email: user_info.email,
+            password: user_info.password,
+            phone_number: user_info.phone_number,
+            bio: user_profile.bio.clone().unwrap_or("".to_string()),
+            profile_picture: user_profile
+                .profile_picture
+                .clone()
+                .unwrap_or("".to_string()),
+        }),
         Err(e) => {
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -241,6 +253,7 @@ pub fn get_user_with_username(
             username: user_row[0].username.clone(),
             email: user_row[0].email.clone(),
             password: user_row[0].password.clone(),
+            phone_number: user_row[0].phone_number.clone(),
         })
     } else {
         Err(Box::new(std::io::Error::new(
@@ -265,6 +278,7 @@ pub fn get_user_with_email(
             username: user_row[0].username.clone(),
             email: user_row[0].email.clone(),
             password: user_row[0].password.clone(),
+            phone_number: user_row[0].phone_number.clone(),
         })
     } else {
         // some thing is wrong
@@ -290,6 +304,7 @@ pub fn get_user_with_user_id(
             username: user_row[0].username.clone(),
             email: user_row[0].email.clone(),
             password: user_row[0].password.clone(),
+            phone_number: user_row[0].phone_number.clone(),
         })
     } else {
         // some thing is wrong

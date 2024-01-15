@@ -72,6 +72,18 @@ pub struct QUsers {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub phone_number: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct QUsersResponse {
+    pub user_id: i32,
+    pub username: String,
+    pub email: String,
+    pub password: String,
+    pub phone_number: String,
+    pub bio: String,
+    pub profile_picture: String,
 }
 
 #[derive(Queryable, Deserialize, Serialize, Selectable, Debug, Insertable, Iterable)]
