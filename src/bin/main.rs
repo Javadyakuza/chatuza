@@ -6,6 +6,7 @@ use chatuza_db::api_models::*;
 use chatuza_db::db_models::*;
 use chatuza_db::wallet_lib::*;
 use chatuza_db::*;
+use rocket::fairing::Fairing;
 use rocket::request::Form;
 use rocket::request::Request;
 use rocket::*;
@@ -435,7 +436,6 @@ fn get_solana_addr(username: String) -> Json<Result<String, String>> {
 fn not_found(req: &Request) -> String {
     format!("Oh no the {} path doesn't exists !!", req.uri())
 }
-
 fn main() {
     rocket::ignite()
         .register(catchers![not_found])
@@ -474,7 +474,6 @@ fn main() {
                 fund_wallet
             ],
         )
-        // .attach(DbConn::fairing())
         .launch();
     // needs the "cargo build and then cargo run to be ran oin the fucking serve"
 }

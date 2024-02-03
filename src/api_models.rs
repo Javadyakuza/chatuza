@@ -2,7 +2,6 @@
 use rocket::*;
 
 use serde::{Deserialize, Serialize};
-use solana_sdk::pubkey::Pubkey;
 
 #[derive(FromForm, Debug, Serialize)]
 pub struct NewUserIN {
