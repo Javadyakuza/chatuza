@@ -6,12 +6,10 @@ use chatuza_db::api_models::*;
 use chatuza_db::db_models::*;
 use chatuza_db::wallet_lib::*;
 use chatuza_db::*;
-use rocket::fairing::Fairing;
 use rocket::request::Form;
 use rocket::request::Request;
 use rocket::*;
 use rocket_contrib::json::Json;
-use solana_sdk::signature::Signature;
 
 #[get("/user-via-username/<username>")]
 fn get_user_via_username(username: String) -> Json<Result<QUsers, String>> {
