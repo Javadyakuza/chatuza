@@ -2,3 +2,5 @@
 /Cargo.lock
 .env
 .sec
+.vscode
+.idea
