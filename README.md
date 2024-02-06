@@ -1,6 +1,6 @@
 # P2P ChatApp Messenger 
 
-![chatuza logo][https://github.com/Javadyakuza/chatuza/blob/master/public/chatuza_logo.png]
+![chatuza logo](https://github.com/Javadyakuza/chatuza/blob/master/public/chatuza_logo.png)
 
 This repository holds the code for a secure and feature-rich P2P chat application built with Rust and Tauri.
 
